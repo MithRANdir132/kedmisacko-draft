@@ -166,7 +166,7 @@
   tr .r-name:hover { text-decoration:underline; text-decoration-style:dotted; text-underline-offset:3px; }
   .team.me { border-color:var(--brass); box-shadow:inset 0 0 0 1px var(--brass); }
   #myteam-row { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-  #myteam-row select { font-family:ui-monospace,monospace; font-size:12.5px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:2px; padding:4px 7px; }
+  #myteam-row .locked-team { color:var(--brass); font-size:13px; }
   body.adv-open { padding-bottom:44vh; }
   #advisor {
     position:fixed; left:0; right:0; bottom:0; z-index:40;
@@ -237,7 +237,7 @@
     <div class="note" style="margin-bottom:6px">Budgets update live. <b>Max bid</b> = what a team can offer and still fill 16 roster spots at $1 each. Includes manually-entered sales below.</div>
     <div class="teams" id="teams"></div>
     <div id="myteam-row">You are
-      <select id="myteam"><option value="">pick your team&hellip;</option></select>
+      <b class="locked-team">Toddler Gurleys</b>
       <span class="note" style="text-transform:none;letter-spacing:normal;font-weight:400">&mdash; click any player name to open the bidding advisor</span>
     </div>
     <div class="note" id="inflation-line"><b>Inflation</b><span class="info-wrap"><button type="button" class="info-btn" aria-label="How inflation works">i</button><span class="info-pop" role="tooltip">
@@ -837,7 +837,14 @@ rowsEl.addEventListener("click", function(ev){
 });
 
 /* ---------- bidding-war advisor ---------- */
-var MYTEAM = (function(){ try { return localStorage.getItem("ks26_myteam_v1") || ""; } catch(e){ return ""; } })();
+/* My team is locked: Toddler Gurleys. Roster id resolved by name after teams load; "8" is the Aug-24 snapshot fallback. */
+var MYTEAM_NAME = "Toddler Gurleys";
+var MYTEAM = "8";
+function lockMyTeam(){
+  for (var rid in teamName) {
+    if ((teamName[rid] || "").trim().toLowerCase() === MYTEAM_NAME.toLowerCase()) { MYTEAM = rid; return; }
+  }
+}
 var advisorIdx = null, advisorBid = null;
 var advEl = document.getElementById("advisor");
 var advBidInput = document.getElementById("adv-bid-input");
@@ -924,7 +931,6 @@ function updateAdvisor(){
     lines.push('Sold: <b>$'+sold.amount+'</b> to '+sold.team+(sold.keeper?' (keeper)':'')+' &mdash; '+(sold.amount>w?'<span class="call-walk">+'+(sold.amount-w)+' over worth</span>':'<span class="call-push">'+(sold.amount-w)+' vs worth</span>'));
   } else {
     if (me) lines.push('You: <b>$'+me.left+'</b> left &middot; max bid <b>$'+me.maxBid+'</b> &middot; '+needFor(me,P).label);
-    else lines.push('<span class="call-note">Pick your team above to get your side of the math.</span>');
 
     var rivals = [];
     for (var rid in st) { if (rid !== MYTEAM) rivals.push({rid:rid, s:st[rid]}); }
@@ -970,23 +976,7 @@ function updateAdvisor(){
   document.getElementById("adv-teams").innerHTML = cards || '<span class="note">Waiting for league data&hellip;</span>';
 }
 
-document.getElementById("myteam").addEventListener("change", function(){
-  MYTEAM = this.value;
-  try { localStorage.setItem("ks26_myteam_v1", MYTEAM); } catch(e){}
-  renderTeams();
-  updateAdvisor();
-});
-function populateMyTeam(){
-  var sel = document.getElementById("myteam");
-  if (sel.options.length > 1 || !Object.keys(teamName).length) return;
-  var rids = Object.keys(teamName).sort(function(a,b){ return teamName[a].localeCompare(teamName[b]); });
-  rids.forEach(function(rid){
-    var o = document.createElement("option");
-    o.value = rid; o.textContent = teamName[rid];
-    if (rid === MYTEAM) o.selected = true;
-    sel.appendChild(o);
-  });
-}
+function populateMyTeam(){ lockMyTeam(); }
 
 advBidInput.addEventListener("input", function(){
   var v = parseInt(this.value, 10);
@@ -1069,6 +1059,7 @@ loadTeams().catch(function(){}).then(function(){
   if (!Object.keys(teamName).length) {
     for (var rid in FALLBACK_TEAMS) teamName[rid] = FALLBACK_TEAMS[rid];
   }
+  lockMyTeam();
   renderAll();
   poll();
   setInterval(poll, 20000);
