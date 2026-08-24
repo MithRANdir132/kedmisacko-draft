@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KedmiSacko Draft Tracker</title>
+<style>
+  :root {
+    --paper:#EDECE6; --surface:#FAF9F5; --surface-2:#F2F1EB;
+    --ink:#171C24; --ink-soft:#3D4652; --muted:#6E7784;
+    --line:#D8D6CD; --line-soft:#E4E2DA;
+    --brass:#9C6F1E; --brass-tint:#F0E4C8;
+    --buy:#1B6455; --buy-tint:#DCEBE5;
+    --fade:#9E3E2A; --fade-tint:#F3DFD9;
+    --sleep:#33628F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#0F1319; --surface:#171C24; --surface-2:#1E242D;
+      --ink:#E9E7E0; --ink-soft:#C2C6CD; --muted:#8A94A2;
+      --line:#2B323C; --line-soft:#232932;
+      --brass:#D9A441; --brass-tint:#33280F;
+      --buy:#57B79F; --buy-tint:#12302A;
+      --fade:#DB7A61; --fade-tint:#351B15;
+      --sleep:#86B3E0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#0F1319; --surface:#171C24; --surface-2:#1E242D;
+    --ink:#E9E7E0; --ink-soft:#C2C6CD; --muted:#8A94A2;
+    --line:#2B323C; --line-soft:#232932;
+    --brass:#D9A441; --brass-tint:#33280F;
+    --buy:#57B79F; --buy-tint:#12302A;
+    --fade:#DB7A61; --fade-tint:#351B15;
+    --sleep:#86B3E0;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:14.5px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1240px; margin:0 auto; padding:0 16px 64px; display:flex; flex-direction:column; gap:20px; }
+  .masthead {
+    border-bottom:2px solid var(--ink); padding:22px 0 12px;
+    display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:10px 24px;
+  }
+  h1 { font-weight:800; font-size:clamp(26px,5vw,40px); text-transform:uppercase; letter-spacing:.01em; line-height:.95; margin:0; }
+  h1 .thin { color:var(--brass); }
+  .stamp { font-family:ui-monospace,monospace; font-size:11.5px; color:var(--muted); text-align:right; line-height:1.7; }
+  .stamp b { color:var(--ink-soft); }
+  #live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--muted); margin-right:5px; vertical-align:1px; }
+  #live-dot.on { background:var(--buy); }
+  #live-dot.err { background:var(--fade); }
+
+  .teams { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px; }
+  .team {
+    background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:8px 10px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .team .tn { font-weight:600; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .team .tm { font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums; font-size:12px; color:var(--ink-soft); }
+  .team .tm b { font-size:15px; color:var(--ink); }
+  .team .bar { height:4px; background:var(--surface-2); border-radius:2px; overflow:hidden; margin-top:3px; }
+  .team .bar i { display:block; height:100%; background:var(--brass); }
+
+  .controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding-top:10px; border-top:1px solid var(--line); }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip {
+    text-transform:uppercase; letter-spacing:.06em; font-weight:600; font-size:12px;
+    padding:5px 12px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+    border-radius:2px; cursor:pointer;
+  }
+  .chip[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:var(--paper); }
+  .field { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .field select { font-family:ui-monospace,monospace; font-size:12.5px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:2px; padding:5px 7px; }
+  :is(.chip,select):focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
+
+  .board-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:3px; background:var(--surface); }
+  table { border-collapse:collapse; width:100%; min-width:980px; }
+  thead th {
+    position:sticky; top:0; z-index:2; background:var(--surface-2);
+    text-transform:uppercase; letter-spacing:.07em; font-weight:600; font-size:11.5px; color:var(--muted);
+    text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  td { padding:7px 12px; border-bottom:1px solid var(--line-soft); white-space:nowrap; }
+  tbody tr:last-child td { border-bottom:0; }
+  tr.sold td { opacity:.55; }
+  tr.sold .r-name { text-decoration:line-through; }
+  tr.mysort:hover { background:var(--surface-2); }
+  .r-rank { color:var(--muted); font-family:ui-monospace,monospace; font-size:12px; }
+  .r-name { font-weight:600; }
+  .r-meta { color:var(--muted); font-size:12px; font-family:ui-monospace,monospace; }
+  .money { font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums; text-align:right; }
+  .money.board { font-weight:700; }
+  .money.adj { font-weight:700; }
+  .adj-up { color:var(--fade); }
+  .adj-down { color:var(--buy); }
+  #inflation-line { font-family:ui-monospace,monospace; font-size:12px; margin-top:8px; }
+  #inflation-line b { color:var(--ink); }
+  .info-wrap { position:relative; display:inline-block; margin:0 4px 0 2px; }
+  .info-btn {
+    width:15px; height:15px; padding:0; border-radius:50%;
+    border:1px solid var(--muted); background:transparent; color:var(--muted);
+    font-family:Georgia,serif; font-style:italic; font-size:10.5px; line-height:1;
+    cursor:help; vertical-align:1px;
+  }
+  .info-btn:hover, .info-btn:focus { border-color:var(--brass); color:var(--brass); outline:none; }
+  .info-pop {
+    display:none; position:absolute; left:0; top:22px; z-index:20;
+    width:min(340px, 78vw); padding:10px 12px;
+    background:var(--surface); border:1px solid var(--line); border-radius:3px;
+    box-shadow:0 4px 14px rgba(0,0,0,.18);
+    font-family:ui-sans-serif,system-ui,sans-serif; font-size:12.5px; line-height:1.55;
+    color:var(--ink-soft); white-space:normal; text-transform:none; letter-spacing:normal;
+  }
+  .info-pop b { color:var(--ink); }
+  .info-wrap:hover .info-pop, .info-btn:focus + .info-pop { display:block; }
+  .inf-up { color:var(--fade); font-weight:700; }
+  .inf-down { color:var(--buy); font-weight:700; }
+  .pos { display:inline-block; min-width:28px; text-align:center; font-weight:700; font-size:11.5px; padding:1px 5px; border-radius:2px; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft); }
+  .pos.QB { background:var(--brass-tint); border-color:var(--brass); color:var(--brass); }
+  .tag { display:inline-block; min-width:42px; text-align:center; font-family:ui-monospace,monospace; font-size:11.5px; font-weight:600; padding:1px 6px; border-radius:2px; }
+  .tag.buy { background:var(--buy-tint); color:var(--buy); }
+  .tag.fade { background:var(--fade-tint); color:var(--fade); }
+  .tag.flat { color:var(--muted); }
+  .tag.keeper { background:var(--brass-tint); color:var(--brass); }
+  .soldcell { font-family:ui-monospace,monospace; font-size:12px; }
+  .soldcell .who { color:var(--muted); }
+  .paid-over { color:var(--fade); font-weight:700; }
+  .paid-under { color:var(--buy); font-weight:700; }
+  .note { font-size:12.5px; color:var(--muted); }
+  .log { background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:10px 14px; font-family:ui-monospace,monospace; font-size:12px; max-height:180px; overflow-y:auto; }
+  .log div { padding:1px 0; }
+  .err-banner { background:var(--fade-tint); color:var(--fade); border:1px solid var(--fade); border-radius:3px; padding:8px 12px; font-size:13px; display:none; }
+
+  /* --- editable cells --- */
+  .cell-input {
+    font-family: ui-monospace, monospace; font-size:12.5px; color:var(--ink);
+    background:transparent; border:1px solid transparent; border-radius:2px;
+    padding:3px 5px; min-width:0;
+  }
+  .cell-input:hover { border-color:var(--line); }
+  .cell-input:focus { border-color:var(--brass); background:var(--surface-2); outline:none; }
+  input.cell-input[type="number"] { text-align:right; width:58px; }
+  .notes-input { width:150px; font-family:ui-sans-serif, system-ui, sans-serif; font-size:12.5px; }
+  select.cell-input { width:86px; cursor:pointer; }
+  .status-Target { color:var(--buy); font-weight:700; }
+  .status-Watch { color:var(--brass); font-weight:700; }
+  .status-Sleeper { color:var(--sleep); font-weight:700; }
+  .status-Pass { color:var(--fade); font-weight:700; }
+
+  /* --- drag-to-rank --- */
+  td.grip-cell { padding:7px 2px 7px 8px; width:22px; }
+  .grip { cursor:grab; color:var(--muted); font-size:14px; line-height:1; user-select:none; display:inline-block; padding:2px 3px; }
+  .grip:hover { color:var(--ink-soft); }
+  .grip.off { opacity:.22; cursor:default; }
+  .grip.off:hover { color:var(--muted); }
+  tr.dragging { opacity:.35; }
+  tr.drop-above td { border-top:2px solid var(--brass); }
+  tr.drop-below td { border-bottom:2px solid var(--brass); }
+  .edited-mark { color:var(--brass); font-size:10px; vertical-align:2px; margin-left:1px; }
+
+  /* --- bidding-war advisor --- */
+  tr .r-name { cursor:pointer; }
+  tr .r-name:hover { text-decoration:underline; text-decoration-style:dotted; text-underline-offset:3px; }
+  .team.me { border-color:var(--brass); box-shadow:inset 0 0 0 1px var(--brass); }
+  #myteam-row { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  #myteam-row select { font-family:ui-monospace,monospace; font-size:12.5px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:2px; padding:4px 7px; }
+  body.adv-open { padding-bottom:44vh; }
+  #advisor {
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    background:var(--surface); border-top:2px solid var(--ink);
+    box-shadow:0 -6px 24px rgba(0,0,0,.22);
+    max-height:44vh; overflow-y:auto; padding:12px 16px 16px;
+  }
+  #advisor .adv-inner { max-width:1240px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+  .adv-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 20px; }
+  #adv-title { font-weight:800; font-size:16px; }
+  #adv-title .meta { font-family:ui-monospace,monospace; font-weight:400; font-size:12px; color:var(--muted); margin-left:8px; }
+  .adv-bid { display:flex; align-items:center; gap:6px; font-family:ui-monospace,monospace; font-size:12.5px; color:var(--muted); }
+  .adv-bid input { width:64px; font-family:ui-monospace,monospace; font-size:14px; text-align:right; padding:4px 6px; border:1px solid var(--line); border-radius:2px; background:var(--paper); color:var(--ink); }
+  .adv-bid button { font-family:ui-monospace,monospace; font-size:12px; padding:4px 9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft); border-radius:2px; cursor:pointer; }
+  .adv-bid button:hover { border-color:var(--ink-soft); }
+  #adv-close { font-size:15px; line-height:1; padding:3px 9px; }
+  #adv-verdict { font-family:ui-monospace,monospace; font-size:13px; line-height:1.6; padding:8px 12px; background:var(--surface-2); border:1px solid var(--line); border-radius:3px; }
+  .call-push { color:var(--buy); font-weight:800; }
+  .call-walk { color:var(--fade); font-weight:800; }
+  .call-note { color:var(--muted); }
+  #adv-teams { display:grid; grid-template-columns:repeat(auto-fill,minmax(215px,1fr)); gap:8px; }
+  .oppo { background:var(--paper); border:1px solid var(--line); border-radius:3px; padding:8px 10px; font-size:12px; display:flex; flex-direction:column; gap:3px; }
+  .oppo.dead { opacity:.45; }
+  .oppo .on { font-weight:700; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .oppo .om { font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+  .oppo .om b { color:var(--ink); }
+  .need { color:var(--fade); font-weight:700; }
+  .mild { color:var(--brass); font-weight:600; }
+  .full { color:var(--muted); }
+  .disc-over { color:var(--fade); }
+  .disc-under { color:var(--buy); }
+
+  .mark-sold-btn {
+    font-family:ui-monospace,monospace; font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--muted); background:transparent; border:1px dashed var(--line); border-radius:2px;
+    padding:3px 8px; cursor:pointer; white-space:nowrap;
+  }
+  .mark-sold-btn:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
+  .manual-form { display:inline-flex; align-items:center; gap:3px; }
+  .manual-form input, .manual-form select {
+    font-family:ui-monospace,monospace; font-size:11.5px; border:1px solid var(--line); border-radius:2px;
+    padding:2px 4px; background:var(--surface);
+  }
+  .manual-form input[type="number"] { width:46px; }
+  .manual-form select { max-width:96px; }
+  .manual-form button { border:1px solid var(--line); background:var(--surface); border-radius:2px; cursor:pointer; padding:1px 6px; font-size:12px; line-height:1.4; }
+  .manual-ok { color:var(--buy); border-color:var(--buy) !important; }
+  .manual-cancel { color:var(--fade); }
+  .manual-tag { font-family:ui-monospace,monospace; font-size:10px; font-weight:700; color:var(--brass); }
+  .manual-clear { border:none !important; background:none !important; color:var(--muted) !important; cursor:pointer; font-size:13px; padding:0 2px !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <h1>KedmiSacko<br><span class="thin">Live Auction Tracker</span></h1>
+    <div class="stamp">
+      <b>HALF-PPR &middot; SUPERFLEX &middot; 12 TEAMS &middot; $200</b><br>
+      <span id="live-dot"></span><span id="status-line">connecting&hellip;</span><br>
+      <span id="updated-line">draft: Fri Aug 28, 9:00 PM (IL)</span>
+    </div>
+  </header>
+
+  <div class="err-banner" id="err-banner"></div>
+
+  <section>
+    <div class="note" style="margin-bottom:6px">Budgets update live. <b>Max bid</b> = what a team can offer and still fill 16 roster spots at $1 each. Includes manually-entered sales below.</div>
+    <div class="teams" id="teams"></div>
+    <div id="myteam-row">You are
+      <select id="myteam"><option value="">pick your team&hellip;</option></select>
+      <span class="note" style="text-transform:none;letter-spacing:normal;font-weight:400">&mdash; click any player name to open the bidding advisor</span>
+    </div>
+    <div class="note" id="inflation-line"><b>Inflation</b><span class="info-wrap"><button type="button" class="info-btn" aria-label="How inflation works">i</button><span class="info-pop" role="tooltip">
+      The room started with $2,400, and every roster spot costs at least $1. This line compares the <b>money still in the room</b> to the <b>value still on the board</b>.<br><br>
+      When someone lands a player for less than he&rsquo;s worth (cheap keepers, early bargains), leftover cash chases less talent &mdash; prices on everyone remaining drift <b>up</b>. When someone overpays, money leaves faster than value &mdash; the rest of the board gets <b>cheaper</b>.<br><br>
+      Each position is tracked separately and blended with the overall number, so a runaway RB market doesn&rsquo;t reprice the QBs.<br><br>
+      <b>Adj</b> applies these percentages to Worth: it&rsquo;s what a player should really go for <i>right now</i>. It starts at 0% and moves with every sale.
+    </span></span> <span id="inflation-vals">waiting for data&hellip;</span></div>
+  </section>
+
+  <div class="controls">
+    <div class="chips" id="pos-chips" role="group" aria-label="Filter by position">
+      <button class="chip" data-pos="ALL" aria-pressed="true">All</button>
+      <button class="chip" data-pos="QB" aria-pressed="false">QB</button>
+      <button class="chip" data-pos="RB" aria-pressed="false">RB</button>
+      <button class="chip" data-pos="WR" aria-pressed="false">WR</button>
+      <button class="chip" data-pos="TE" aria-pressed="false">TE</button>
+    </div>
+    <div class="chips" id="avail-chips" role="group" aria-label="Filter by availability">
+      <button class="chip" data-av="ALL" aria-pressed="false">Everyone</button>
+      <button class="chip" data-av="AVAIL" aria-pressed="true">Available</button>
+      <button class="chip" data-av="SOLD" aria-pressed="false">Sold</button>
+    </div>
+    <div class="chips" id="status-chips" role="group" aria-label="Filter by status">
+      <button class="chip" data-st="ALL" aria-pressed="true">Any status</button>
+      <button class="chip" data-st="Target" aria-pressed="false">Target</button>
+      <button class="chip" data-st="Watch" aria-pressed="false">Watch</button>
+      <button class="chip" data-st="Sleeper" aria-pressed="false">Sleeper</button>
+      <button class="chip" data-st="Pass" aria-pressed="false">Pass</button>
+    </div>
+    <label class="field">Sort
+      <select id="sort">
+        <option value="myrank">My rank (drag to reorder)</option>
+        <option value="board">Worth (board value)</option>
+        <option value="adj">Adjusted value (live)</option>
+        <option value="going">Going for (market)</option>
+        <option value="edge">Best deals first</option>
+        <option value="recent">Most recent sales</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="board-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th><th>#</th><th>Player</th><th>Pos</th><th>Tm</th><th>Bye</th>
+          <th style="text-align:right">Going For</th>
+          <th style="text-align:right">Worth</th>
+          <th style="text-align:right" title="Worth repriced for live auction inflation: remaining league dollars vs remaining board value, position-weighted">Adj</th>
+          <th>Deal</th>
+          <th>Status</th>
+          <th>Notes</th>
+          <th>Sold</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <section>
+    <div class="note" style="margin-bottom:6px"><b>Sale log</b> — newest first. Green = under board value, red = overpaid.</div>
+    <div class="log" id="log"><div>No sales yet.</div></div>
+  </section>
+
+  <div id="advisor" hidden>
+    <div class="adv-inner">
+      <div class="adv-head">
+        <div id="adv-title"></div>
+        <div class="adv-bid">
+          <label>bid $<input type="number" id="adv-bid-input" min="1" placeholder="?"></label>
+          <button type="button" data-b="1">+1</button>
+          <button type="button" data-b="5">+5</button>
+          <button type="button" id="adv-close" title="close">&times;</button>
+        </div>
+      </div>
+      <div id="adv-verdict"></div>
+      <div id="adv-teams"></div>
+    </div>
+  </div>
+
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. Keep this tab open during the draft.</p>
+
+</div>
+
+<script>
+"use strict";
+var DRAFT_ID = "1389272920370454528";
+var LEAGUE_ID = "1389272920357883904";
+var BUDGET = 200, ROUNDS = 16;
+
+// [name, pos, team, bye, marketGoingFor, boardWorth, deal]
+var DATA = [["Josh Allen", "QB", "BUF", 7, 42, 52, "BUY"], ["Jahmyr Gibbs", "RB", "DET", 6, 49, 49, "FAIR"], ["Bijan Robinson", "RB", "ATL", 11, 47, 47, "FAIR"], ["Ja'Marr Chase", "WR", "CIN", 6, 43, 44, "FAIR"], ["Puka Nacua", "WR", "LAR", 11, 40, 44, "FAIR"], ["Amon-Ra St. Brown", "WR", "DET", 6, 51, 44, "FADE"], ["Christian McCaffrey", "RB", "SF", 8, 44, 43, "FAIR"], ["Jaxon Smith-Njigba", "WR", "SEA", 11, 41, 41, "FAIR"], ["Jonathan Taylor", "RB", "IND", 13, 46, 40, "FADE"], ["CeeDee Lamb", "WR", "DAL", 14, 44, 40, "FAIR"], ["Lamar Jackson", "QB", "BAL", 13, 28, 37, "BUY"], ["Justin Jefferson", "WR", "MIN", 6, 39, 37, "FAIR"], ["James Cook", "RB", "BUF", 7, 35, 36, "FAIR"], ["Drake Maye", "QB", "NE", 11, 26, 35, "BUY"], ["Jayden Daniels", "QB", "WAS", 7, 25, 33, "BUY"], ["Drake London", "WR", "ATL", 11, 39, 33, "FADE"], ["Derrick Henry", "RB", "BAL", 13, 37, 33, "FADE"], ["Joe Burrow", "QB", "CIN", 6, 24, 32, "BUY"], ["Jalen Hurts", "QB", "PHI", 10, 24, 32, "BUY"], ["Saquon Barkley", "RB", "PHI", 10, 33, 32, "FAIR"], ["De'Von Achane", "RB", "MIA", 6, 39, 31, "FADE"], ["Kenneth Walker III", "RB", "KC", 5, 29, 30, "FAIR"], ["Rashee Rice", "WR", "KC", 5, 36, 30, "FADE"], ["Chase Brown", "RB", "CIN", 6, 32, 29, "FAIR"], ["Trevor Lawrence", "QB", "JAC", 7, 21, 28, "BUY"], ["Trey McBride", "TE", "ARI", 14, 33, 28, "FADE"], ["Caleb Williams", "QB", "CHI", 10, 20, 27, "BUY"], ["Justin Herbert", "QB", "LAC", 7, 20, 27, "BUY"], ["Brock Purdy", "QB", "SF", 8, 20, 27, "BUY"], ["A.J. Brown", "WR", "NE", 11, 23, 27, "BUY"], ["Brock Bowers", "TE", "LVR", 13, 28, 27, "FAIR"], ["Nico Collins", "WR", "HOU", 8, 24, 27, "FAIR"], ["Omarion Hampton", "RB", "LAC", 7, 28, 27, "FAIR"], ["Dak Prescott", "QB", "DAL", 14, 20, 26, "BUY"], ["Kyler Murray", "QB", "MIN", 6, 20, 26, "BUY"], ["George Pickens", "WR", "DAL", 14, 22, 26, "BUY"], ["Chris Olave", "WR", "NO", 8, 27, 25, "FAIR"], ["Jaxson Dart", "QB", "NYG", 8, 18, 24, "BUY"], ["Malik Nabers", "WR", "NYG", 8, 24, 24, "FAIR"], ["Josh Jacobs", "RB", "GB", 11, 25, 24, "FAIR"], ["Breece Hall", "RB", "NYJ", 13, 28, 23, "FADE"], ["Jeremiyah Love", "RB", "ARI", 14, 29, 23, "FADE"], ["Bo Nix", "QB", "DEN", 10, 17, 22, "BUY"], ["Javonte Williams", "RB", "DAL", 14, 23, 22, "FAIR"], ["Garrett Wilson", "WR", "NYJ", 13, 23, 22, "FAIR"], ["Patrick Mahomes", "QB", "KC", 5, 16, 21, "BUY"], ["Zay Flowers", "WR", "BAL", 13, 17, 20, "BUY"], ["Kyren Williams", "RB", "LAR", 11, 20, 20, "FAIR"], ["Tee Higgins", "WR", "CIN", 6, 15, 20, "BUY"], ["Travis Etienne", "RB", "NO", 8, 21, 20, "FAIR"], ["DeVonta Smith", "WR", "PHI", 10, 16, 19, "BUY"], ["Colston Loveland", "TE", "CHI", 10, 14, 19, "BUY"], ["Tetairoa McMillan", "WR", "CAR", 5, 20, 18, "FADE"], ["Jared Goff", "QB", "DET", 6, 13, 17, "BUY"], ["Davante Adams", "WR", "LAR", 11, 15, 17, "FAIR"], ["Jaylen Waddle", "WR", "DEN", 10, 12, 16, "BUY"], ["Emeka Egbuka", "WR", "TB", 10, 16, 16, "FAIR"], ["Tyler Warren", "TE", "IND", 13, 12, 16, "BUY"], ["Christian Watson", "WR", "GB", 11, 12, 16, "BUY"], ["Matthew Stafford", "QB", "LAR", 11, 11, 15, "BUY"], ["Baker Mayfield", "QB", "TB", 10, 11, 15, "BUY"], ["Jordan Love", "QB", "GB", 11, 11, 15, "BUY"], ["Tyler Shough", "QB", "NO", 8, 11, 15, "BUY"], ["Ladd McConkey", "WR", "LAC", 7, 12, 15, "BUY"], ["Luther Burden III", "WR", "CHI", 10, 11, 15, "BUY"], ["Cameron Skattebo", "RB", "NYG", 8, 19, 15, "FADE"], ["Mike Evans", "WR", "SF", 8, 11, 15, "BUY"], ["D'Andre Swift", "RB", "CHI", 10, 11, 14, "BUY"], ["Quinshon Judkins", "RB", "CLE", 11, 16, 14, "FADE"], ["Bucky Irving", "RB", "TB", 10, 16, 14, "FADE"], ["Malik Willis", "QB", "MIA", 6, 10, 13, "BUY"], ["Daniel Jones", "QB", "IND", 13, 10, 13, "BUY"], ["David Montgomery", "RB", "HOU", 8, 10, 13, "BUY"], ["Tucker Kraft", "TE", "GB", 11, 10, 13, "BUY"], ["C.J. Stroud", "QB", "HOU", 8, 12, 12, "FAIR"], ["Cameron Ward", "QB", "TEN", 9, 9, 12, "BUY"], ["Sam LaPorta", "TE", "DET", 6, 9, 12, "BUY"], ["Bhayshul Tuten", "RB", "JAC", 7, 9, 11, "BUY"], ["Bryce Young", "QB", "CAR", 5, 11, 11, "FAIR"], ["Harold Fannin Jr.", "TE", "CLE", 11, 8, 11, "BUY"], ["TreVeyon Henderson", "RB", "NE", 11, 8, 10, "BUY"], ["Rhamondre Stevenson", "RB", "NE", 11, 7, 9, "BUY"], ["George Kittle", "TE", "SF", 8, 7, 9, "BUY"], ["Kyle Pitts", "TE", "ATL", 11, 6, 8, "BUY"], ["Ashton Jeanty", "RB", "LVR", 13, 6, 6, "est."], ["Terry McLaurin", "WR", "WAS", 7, 6, 6, "est."], ["Sam Darnold", "QB", "SEA", 11, 6, 6, "est."], ["Jameson Williams", "WR", "DET", 6, 6, 6, "est."], ["DJ Moore", "WR", "BUF", 7, 6, 6, "est."], ["Rome Odunze", "WR", "CHI", 10, 6, 6, "est."], ["Jadarian Price", "RB", "SEA", 11, 4, 4, "est."], ["Parker Washington", "WR", "JAC", 7, 4, 4, "est."], ["Jacoby Brissett", "QB", "ARI", 14, 4, 4, "est."], ["Marvin Harrison Jr.", "WR", "ARI", 14, 4, 4, "est."], ["Carnell Tate", "WR", "TEN", 9, 4, 4, "est."], ["Jaylen Warren", "RB", "PIT", 9, 4, 4, "est."], ["Brian Thomas Jr.", "WR", "JAC", 7, 4, 4, "est."], ["Tony Pollard", "RB", "TEN", 9, 4, 4, "est."], ["DK Metcalf", "WR", "PIT", 9, 4, 4, "est."], ["Rico Dowdle", "RB", "PIT", 9, 4, 4, "est."], ["Chris Godwin Jr.", "WR", "TB", 10, 4, 4, "est."], ["Courtland Sutton", "WR", "DEN", 10, 3, 3, "est."], ["Jonathon Brooks", "RB", "CAR", 5, 3, 3, "est."], ["Michael Pittman Jr.", "WR", "PIT", 9, 3, 3, "est."], ["J.K. Dobbins", "RB", "DEN", 10, 3, 3, "est."], ["Michael Wilson", "WR", "ARI", 14, 3, 3, "est."], ["Quentin Johnston", "WR", "LAC", 7, 3, 3, "est."], ["Alec Pierce", "WR", "IND", 13, 3, 3, "est."], ["Mike Washington Jr.", "RB", "LVR", 13, 3, 3, "est."], ["Blake Corum", "RB", "LAR", 11, 3, 3, "est."], ["Josh Downs", "WR", "IND", 13, 3, 3, "est."], ["Chuba Hubbard", "RB", "CAR", 5, 3, 3, "est."], ["RJ Harvey", "RB", "DEN", 10, 3, 3, "est."], ["Wan'Dale Robinson", "WR", "TEN", 9, 3, 3, "est."], ["Stefon Diggs", "WR", "WAS", 7, 3, 3, "est."], ["Jacory Croskey-Merritt", "RB", "WAS", 7, 3, 3, "est."], ["Geno Smith", "QB", "NYJ", 13, 3, 3, "est."], ["Jordan Addison", "WR", "MIN", 6, 3, 3, "est."], ["Kyle Monangai", "RB", "CHI", 10, 3, 3, "est."], ["Jordan Mason", "RB", "MIN", 6, 2, 2, "est."], ["Kenny Gainwell", "RB", "TB", 10, 2, 2, "est."], ["Jayden Reed", "WR", "GB", 11, 2, 2, "est."], ["Rachaad White", "RB", "WAS", 7, 2, 2, "est."], ["Jakobi Meyers", "WR", "JAC", 7, 2, 2, "est."], ["Makai Lemon", "WR", "PHI", 10, 2, 2, "est."], ["Aaron Jones Sr.", "RB", "MIN", 6, 2, 2, "est."], ["Aaron Rodgers", "QB", "PIT", 9, 2, 2, "est."], ["KC Concepcion", "WR", "CLE", 11, 2, 2, "est."], ["Jordyn Tyson", "WR", "NO", 8, 2, 2, "est."], ["Chris Rodriguez Jr.", "RB", "JAC", 7, 2, 2, "est."], ["Xavier Worthy", "WR", "KC", 5, 2, 2, "est."], ["Jalen Coker", "WR", "CAR", 5, 2, 2, "est."], ["Matthew Golden", "WR", "GB", 11, 2, 2, "est."], ["Tyler Allgeier", "RB", "ARI", 14, 2, 2, "est."], ["Travis Kelce", "TE", "KC", 5, 1, 1, "-"], ["Dalton Kincaid", "TE", "BUF", 7, 1, 1, "-"], ["Dallas Goedert", "TE", "PHI", 10, 1, 1, "-"], ["Isaiah Likely", "TE", "NYG", 8, 1, 1, "-"], ["Mark Andrews", "TE", "BAL", 13, 1, 1, "-"], ["Jake Ferguson", "TE", "DAL", 14, 1, 1, "-"], ["Khalil Shakir", "WR", "BUF", 7, 1, 1, "est."], ["Woody Marks", "RB", "HOU", 8, 1, 1, "est."], ["Romeo Doubs", "WR", "NE", 11, 1, 1, "est."], ["Tyjae Spears", "RB", "TEN", 9, 1, 1, "est."], ["Juwan Johnson", "TE", "NO", 8, 1, 1, "-"], ["Tyrone Tracy Jr.", "RB", "NYG", 8, 1, 1, "est."], ["Deebo Samuel Sr.", "WR", "SF", 8, 1, 1, "est."], ["Tank Bigsby", "RB", "PHI", 10, 1, 1, "est."], ["De'Zhaun Stribling", "WR", "SF", 8, 1, 1, "est."], ["Hunter Henry", "TE", "NE", 11, 1, 1, "-"], ["Zach Charbonnet", "RB", "SEA", 11, 1, 1, "est."], ["Jonah Coleman", "RB", "DEN", 10, 1, 1, "est."], ["Keaton Mitchell", "RB", "LAC", 7, 1, 1, "est."], ["Chigoziem Okonkwo", "TE", "WAS", 7, 1, 1, "-"], ["Brenton Strange", "TE", "JAC", 7, 1, 1, "-"], ["Alvin Kamara", "RB", "NO", 8, 1, 1, "est."], ["Dylan Sampson", "RB", "CLE", 11, 1, 1, "est."], ["Denzel Boston", "WR", "CLE", 11, 1, 1, "est."], ["Isiah Pacheco", "RB", "DET", 6, 1, 1, "est."], ["Dalton Schultz", "TE", "HOU", 8, 1, 1, "-"], ["Tre Tucker", "WR", "LVR", 13, 1, 1, "est."], ["Rashid Shaheed", "WR", "SEA", 11, 1, 1, "est."], ["Fernando Mendoza", "QB", "LVR", 13, 1, 1, "est."], ["Brian Robinson Jr.", "RB", "ATL", 11, 1, 1, "est."], ["Adonai Mitchell", "WR", "NYJ", 13, 1, 1, "est."], ["Tua Tagovailoa", "QB", "ATL", 11, 1, 1, "est."], ["Jerry Jeudy", "WR", "CLE", 11, 1, 1, "est."], ["MarShawn Lloyd", "RB", "GB", 11, 1, 1, "est."], ["T.J. Hockenson", "TE", "MIN", 6, 1, 1, "-"], ["Jauan Jennings", "WR", "MIN", 6, 1, 1, "est."], ["Oronde Gadsden II", "TE", "LAC", 7, 1, 1, "est."], ["Jalen McMillan", "WR", "TB", 10, 1, 1, "est."], ["Braelon Allen", "RB", "NYJ", 13, 1, 1, "est."], ["AJ Barner", "TE", "SEA", 11, 1, 1, "-"], ["Jalen Nailor", "WR", "LVR", 13, 1, 1, "est."], ["Tre' Harris", "WR", "LAC", 7, 1, 1, "est."], ["Dontayvion Wicks", "WR", "PHI", 10, 1, 1, "est."], ["Omar Cooper Jr.", "WR", "NYJ", 13, 1, 1, "est."], ["Ray Davis", "RB", "BUF", 7, 1, 1, "est."], ["Terrance Ferguson", "TE", "LAR", 11, 1, 1, "-"], ["Kenyon Sadiq", "TE", "NYJ", 13, 1, 1, "-"], ["Emmett Johnson", "RB", "KC", 5, 1, 1, "est."], ["Malik Washington", "WR", "MIA", 6, 1, 1, "est."], ["Pat Bryant", "WR", "DEN", 10, 1, 1, "est."], ["Ryan Flournoy", "WR", "DAL", 14, 1, 1, "est."], ["Sean Tucker", "RB", "TB", 10, 1, 1, "est."], ["Gunnar Helm", "TE", "TEN", 9, 1, 1, "est."], ["Nicholas Singleton", "RB", "TEN", 9, 1, 1, "est."], ["Keenan Allen", "WR", "IND", 13, 1, 1, "est."], ["Tank Dell", "WR", "HOU", 8, 1, 1, "est."], ["Kayshon Boutte", "WR", "NE", 11, 1, 1, "est."], ["Calvin Ridley", "WR", "TEN", 9, 1, 1, "est."], ["Jaylin Noel", "WR", "HOU", 8, 1, 1, "est."], ["Cade Otton", "TE", "TB", 10, 1, 1, "-"], ["Kimani Vidal", "RB", "LAC", 7, 1, 1, "est."], ["Travis Hunter", "WR", "JAC", 7, 1, 1, "est."], ["Pat Freiermuth", "TE", "PIT", 9, 1, 1, "est."], ["Isaac TeSlaa", "WR", "DET", 6, 1, 1, "est."], ["Kaytron Allen", "RB", "WAS", 7, 1, 1, "est."], ["James Conner", "RB", "ARI", 14, 1, 1, "est."]];
+
+function norm(s) {
+  s = s.toLowerCase().replace(/['.]/g,"").replace(/-/g," ");
+  s = s.replace(/\b(jr|sr|ii|iii|iv|v)\b/g,"").replace(/\s+/g," ").trim();
+  var alias = {
+    "cam ward":"cameron ward","cam skattebo":"cameron skattebo",
+    "chig okonkwo":"chigoziem okonkwo","mike washington":"michael washington",
+    "gabe davis":"gabriel davis","josh palmer":"joshua palmer","hollywood brown":"marquise brown"
+  };
+  return alias[s] || s;
+}
+var IDX = {};
+DATA.forEach(function(d,i){ IDX[norm(d[0])] = i; });
+
+// Snapshot of league teams (Aug 24) — used when the Sleeper API is unreachable,
+// e.g. on the shared claude.ai link where external requests are blocked.
+// When the API answers (downloaded copy), live names win.
+var FALLBACK_TEAMS = {
+  "1":"Harvey Milubavitch", "2":"Ironi Giants", "3":"Trust the Process",
+  "4":"It's Coming MaHomes", "5":"Ezekiel 25:17", "6":"Broken Ankles",
+  "7":"amirthe15th", "8":"Toddler Gurleys", "9":"Air Jayden",
+  "10":"Shai Crowned Omer Drowned", "11":"LaMarvel Studios", "12":"The Amateur Guild"
+};
+
+var picks = [];          // raw sleeper picks
+var effectivePicks = [];  // sleeper picks + confirmed-not-yet manual sales
+var soldByIdx = {};      // DATA index -> {amount, team, keeper, manual, seq}
+var extraSold = [];      // picks not on the board (DEF, deep guys)
+var teamName = {};       // roster_id -> label
+var posFilter = "ALL", avail = "AVAIL", statusFilter = "ALL";
+
+function money(n){ return "$" + n; }
+
+/* ---------- persistence: overrides, notes, status, manual sales ---------- */
+function loadJSON(key, fallback) {
+  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch (e) { return fallback; }
+}
+var OV = loadJSON("ks26_overrides_v1", {});    // {idx: {worth, going, status, notes}}
+var MS = loadJSON("ks26_manualsales_v1", {});  // {idx: {amount, rosterId}}
+var manualOpenIdx = null;
+var boardDirty = false;
+var ovSaveTimer = null;
+
+/* My rank: persistent custom order of DATA indices (drag to reorder). Default = worth desc. */
+var RANK = loadJSON("ks26_rank_v1", null);
+(function initRank(){
+  var def = DATA.map(function(_,i){ return i; })
+    .sort(function(a,b){ return DATA[b][5]-DATA[a][5] || DATA[b][4]-DATA[a][4]; });
+  if (!Array.isArray(RANK)) { RANK = def; return; }
+  var seenR = {};
+  RANK = RANK.filter(function(i){
+    if (typeof i !== "number" || i < 0 || i >= DATA.length || seenR[i]) return false;
+    seenR[i] = true; return true;
+  });
+  def.forEach(function(i){ if (!seenR[i]) RANK.push(i); }); // new players land by worth
+})();
+function saveRank(){ try { localStorage.setItem("ks26_rank_v1", JSON.stringify(RANK)); } catch(e){} }
+function rankPosMap(){ var m = {}; RANK.forEach(function(idx,p){ m[idx] = p; }); return m; }
+var dragIdx = null, dragging = false;
+
+function saveOVNow(){ try { localStorage.setItem("ks26_overrides_v1", JSON.stringify(OV)); } catch(e){} }
+function saveOVSoon(){ clearTimeout(ovSaveTimer); ovSaveTimer = setTimeout(saveOVNow, 400); }
+function saveMS(){ try { localStorage.setItem("ks26_manualsales_v1", JSON.stringify(MS)); } catch(e){} }
+
+function ov(i){ return OV[i] || {}; }
+function effWorth(i){ var o = ov(i); return (o.worth !== undefined && o.worth !== "") ? Number(o.worth) : DATA[i][5]; }
+function effGoing(i){ var o = ov(i); return (o.going !== undefined && o.going !== "") ? Number(o.going) : DATA[i][4]; }
+function dealFor(i){
+  var o = ov(i);
+  var edited = (o.worth !== undefined && o.worth !== "") || (o.going !== undefined && o.going !== "");
+  if (!edited) return DATA[i][6];
+  var diff = effWorth(i) - effGoing(i);
+  return diff >= 3 ? "BUY" : (diff <= -3 ? "FADE" : "FAIR");
+}
+function dealCls(deal){ return deal === "BUY" ? "buy" : (deal === "FADE" ? "fade" : "flat"); }
+function escapeAttr(s){ return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+
+/* ---------- live auction inflation ----------
+   Everything is measured in "discretionary" dollars — value above the $1-per-slot floor.
+   Calibrated so the factor is 1.00 before any pick: the board's own total worth is the
+   money supply. Sales then move it: cheap keepers / underpays leave more money chasing
+   less value (inflation); overpays do the opposite. Per position, a fixed-budget model
+   (each position's budget = its share of board worth) is blended 50/50 with the overall
+   factor so one hot position doesn't swing the whole board. */
+var INF = { overall:1, byPos:{QB:1,RB:1,WR:1,TE:1} };
+function clampF(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
+
+function computeInflation(){
+  var posW = {QB:0,RB:0,WR:0,TE:0}, unsoldW = {QB:0,RB:0,WR:0,TE:0};
+  var totalW = 0, totalUnsoldW = 0;
+  DATA.forEach(function(d,i){
+    var w = Math.max(effWorth(i)-1, 0);
+    posW[d[1]] += w; totalW += w;
+    if (!soldByIdx[i]) { unsoldW[d[1]] += w; totalUnsoldW += w; }
+  });
+  var spentD = {QB:0,RB:0,WR:0,TE:0}, totalSpentD = 0;
+  Object.keys(soldByIdx).forEach(function(k){
+    var s = soldByIdx[k], d = Math.max(s.amount-1, 0);
+    totalSpentD += d;
+    if (spentD[DATA[k][1]] !== undefined) spentD[DATA[k][1]] += d;
+  });
+  extraSold.forEach(function(s){
+    var d = Math.max(s.amount-1, 0);
+    totalSpentD += d;                       // off-board money leaves the pool
+    if (spentD[s.pos] !== undefined) spentD[s.pos] += d;
+  });
+  INF.overall = totalUnsoldW > 0 ? clampF((totalW - totalSpentD) / totalUnsoldW, 0.5, 2) : 1;
+  ["QB","RB","WR","TE"].forEach(function(P){
+    var pf = unsoldW[P] > 0 ? clampF((posW[P] - spentD[P]) / unsoldW[P], 0.5, 1.8) : 1;
+    INF.byPos[P] = 0.5 * INF.overall + 0.5 * pf;
+  });
+}
+function adjVal(i){
+  var f = INF.byPos[DATA[i][1]] || INF.overall;
+  return Math.max(1, Math.round(1 + (effWorth(i)-1) * f));
+}
+function pct(f){
+  var p = Math.round((f-1)*100);
+  var cls = p > 0 ? "inf-up" : (p < 0 ? "inf-down" : "");
+  return '<span class="'+cls+'">'+(p>0?"+":"")+p+'%</span>';
+}
+function renderInflation(){
+  // only the values span re-renders, so an open tooltip survives the 20s poll
+  document.getElementById("inflation-vals").innerHTML =
+    pct(INF.overall) + ' overall &middot; QB ' + pct(INF.byPos.QB)
+    + ' &middot; RB ' + pct(INF.byPos.RB) + ' &middot; WR ' + pct(INF.byPos.WR)
+    + ' &middot; TE ' + pct(INF.byPos.TE);
+}
+function adjCellHtml(i){
+  var a = adjVal(i), w = effWorth(i);
+  var cls = a > w ? " adj-up" : (a < w ? " adj-down" : "");
+  return '<span class="'+cls.trim()+'">$'+a+'</span>';
+}
+function refreshAdjCells(){
+  renderInflation();
+  rowsEl.querySelectorAll("tr[data-row-idx]").forEach(function(tr){
+    var i = Number(tr.getAttribute("data-row-idx"));
+    var cell = tr.querySelector(".adj-cell");
+    if (cell) cell.innerHTML = adjCellHtml(i);
+  });
+}
+
+function teamOptionsHtml(){
+  var rids = Object.keys(teamName).sort(function(a,b){ return teamName[a].localeCompare(teamName[b]); });
+  return rids.map(function(rid){ return '<option value="'+rid+'">'+teamName[rid]+'</option>'; }).join("");
+}
+
+function fetchJSON(url) {
+  return fetch(url, {cache:"no-store"}).then(function(r){
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  });
+}
+
+function loadTeams() {
+  return Promise.all([
+    fetchJSON("https://api.sleeper.app/v1/league/" + LEAGUE_ID + "/users"),
+    fetchJSON("https://api.sleeper.app/v1/league/" + LEAGUE_ID + "/rosters")
+  ]).then(function(res){
+    var users = {}, i;
+    for (i=0;i<res[0].length;i++) {
+      var u = res[0][i];
+      users[u.user_id] = (u.metadata && u.metadata.team_name) ? u.metadata.team_name : u.display_name;
+    }
+    for (i=0;i<res[1].length;i++) {
+      var r = res[1][i];
+      teamName[r.roster_id] = users[r.owner_id] || ("Team " + r.roster_id);
+    }
+  });
+}
+
+function applyPicks(list) {
+  picks = list || [];
+
+  var seen = {};
+  picks.forEach(function(p){
+    var md = p.metadata || {};
+    var nm = ((md.first_name||"") + " " + (md.last_name||"")).trim();
+    var idx = IDX[norm(nm)];
+    if (idx !== undefined) seen[idx] = true;
+  });
+  var msChanged = false;
+  Object.keys(MS).forEach(function(k){
+    if (seen[Number(k)]) { delete MS[k]; msChanged = true; }
+  });
+  if (msChanged) saveMS();
+
+  effectivePicks = picks.slice();
+  Object.keys(MS).forEach(function(k){
+    var i = Number(k), m = MS[k];
+    var parts = DATA[i][0].split(" ");
+    effectivePicks.push({
+      roster_id: m.rosterId,
+      metadata: { first_name: parts[0], last_name: parts.slice(1).join(" "), amount: String(m.amount), position: DATA[i][1] },
+      is_keeper: false, manual: true
+    });
+  });
+
+  soldByIdx = {}; extraSold = [];
+  for (var i=0;i<effectivePicks.length;i++) {
+    var p = effectivePicks[i];
+    var md = p.metadata || {};
+    var nm = ((md.first_name||"") + " " + (md.last_name||"")).trim();
+    var amt = parseInt(md.amount,10); if (isNaN(amt)) amt = 0;
+    var label = teamName[p.roster_id] || ("Team " + p.roster_id);
+    var rec = {amount:amt, team:label, name:nm, pos:md.position||"", keeper:!!p.is_keeper, manual:!!p.manual, seq:i};
+    var idx = IDX[norm(nm)];
+    if (idx !== undefined) { soldByIdx[idx] = rec; } else { extraSold.push(rec); }
+  }
+}
+
+function renderTeams() {
+  var spent = {}, count = {};
+  for (var rid in teamName) { spent[rid]=0; count[rid]=0; }
+  effectivePicks.forEach(function(p){
+    var a = parseInt((p.metadata||{}).amount,10)||0;
+    spent[p.roster_id] = (spent[p.roster_id]||0) + a;
+    count[p.roster_id] = (count[p.roster_id]||0) + 1;
+  });
+  var html = "";
+  var rids = Object.keys(teamName).sort(function(a,b){ return (spent[b]||0)-(spent[a]||0); });
+  rids.forEach(function(rid){
+    var sp = spent[rid]||0, ct = count[rid]||0;
+    var rem = BUDGET - sp;
+    var slotsLeft = ROUNDS - ct;
+    var maxBid = slotsLeft > 0 ? rem - (slotsLeft - 1) : 0;
+    html += '<div class="team'+(rid===MYTEAM?' me':'')+'"><span class="tn" title="'+teamName[rid]+'">'+teamName[rid]+'</span>'
+      + '<span class="tm"><b>$'+rem+'</b> left &middot; '+ct+'/'+ROUNDS+'</span>'
+      + '<span class="tm">max bid $'+Math.max(maxBid,0)+'</span>'
+      + '<span class="bar"><i style="width:'+Math.min(100,(sp/BUDGET)*100)+'%"></i></span></div>';
+  });
+  document.getElementById("teams").innerHTML = html || '<div class="note">Waiting for league data&hellip;</div>';
+}
+
+function buildSoldHtml(i, s) {
+  if (s) {
+    var html;
+    if (s.keeper) {
+      html = '<span class="tag keeper">KEEPER</span> <span class="soldcell"><b>$'+s.amount+'</b> <span class="who">'+s.team+'</span></span>';
+    } else {
+      var diff = s.amount - effWorth(i);
+      var cls = diff > 0 ? "paid-over" : (diff < 0 ? "paid-under" : "");
+      var sign = diff > 0 ? "+" : "";
+      html = '<span class="soldcell"><b>$'+s.amount+'</b> <span class="'+cls+'">('+sign+diff+')</span> <span class="who">'+s.team+'</span></span>';
+    }
+    if (s.manual) {
+      html += ' <span class="manual-tag">MANUAL<button type="button" class="manual-clear" data-idx="'+i+'" title="remove this manual entry">&times;</button></span>';
+    }
+    return html;
+  }
+  if (manualOpenIdx === i) {
+    return '<span class="manual-form">'
+      + '<input type="number" class="manual-amt" data-idx="'+i+'" placeholder="$" min="1">'
+      + '<select class="manual-team" data-idx="'+i+'"><option value="">team&hellip;</option>' + teamOptionsHtml() + '</select>'
+      + '<button type="button" class="manual-ok" data-idx="'+i+'" title="save">&check;</button>'
+      + '<button type="button" class="manual-cancel" data-idx="'+i+'" title="cancel">&times;</button>'
+      + '</span>';
+  }
+  return '<button type="button" class="mark-sold-btn" data-idx="'+i+'">+ mark sold</button>';
+}
+
+function renderBoard() {
+  var mode = document.getElementById("sort").value;
+  var rp = rankPosMap();
+  var rows = [];
+  DATA.forEach(function(d,i){
+    var s = soldByIdx[i];
+    if (posFilter !== "ALL" && d[1] !== posFilter) return;
+    if (avail === "AVAIL" && s) return;
+    if (avail === "SOLD" && !s) return;
+    if (statusFilter !== "ALL" && (ov(i).status || "") !== statusFilter) return;
+    rows.push({i:i, d:d, s:s});
+  });
+  rows.sort(function(a,b){
+    if (mode === "myrank") return rp[a.i] - rp[b.i];
+    if (mode === "recent") {
+      var sa = a.s ? a.s.seq : -1, sb = b.s ? b.s.seq : -1;
+      if (sa !== sb) return sb - sa;
+      return effWorth(b.i) - effWorth(a.i);
+    }
+    if (mode === "adj") {
+      return adjVal(b.i) - adjVal(a.i) || effWorth(b.i) - effWorth(a.i);
+    }
+    if (mode === "going") {
+      return effGoing(b.i) - effGoing(a.i) || effWorth(b.i) - effWorth(a.i);
+    }
+    if (mode === "edge") {
+      var ea = effWorth(a.i)-effGoing(a.i), eb = effWorth(b.i)-effGoing(b.i);
+      if (eb !== ea) return eb - ea;
+      return effWorth(b.i) - effWorth(a.i);
+    }
+    return effWorth(b.i) - effWorth(a.i) || effGoing(b.i) - effGoing(a.i);
+  });
+  var canDrag = (mode === "myrank");
+  var html = "";
+  rows.forEach(function(r, k){
+    var d = r.d, s = r.s, i = r.i, o = ov(i);
+    var deal = dealFor(i);
+    var tagCls = dealCls(deal);
+    var edited = (o.worth !== undefined && o.worth !== "") || (o.going !== undefined && o.going !== "");
+    var statusVal = o.status || "";
+    var rankShown = canDrag ? (rp[i]+1) : (k+1);
+    html += '<tr class="'+(s?"sold":"mysort")+'" data-row-idx="'+i+'">'
+      + '<td class="grip-cell"><span class="grip'+(canDrag?'':' off')+'" title="'+(canDrag?'drag to reorder':'switch Sort to &quot;My rank&quot; to reorder')+'">&#x283F;</span></td>'
+      + '<td class="r-rank">'+rankShown+'</td>'
+      + '<td class="r-name">'+d[0]+(edited?'<span class="edited-mark" title="edited">&#9679;</span>':'')+'</td>'
+      + '<td><span class="pos '+d[1]+'">'+d[1]+'</span></td>'
+      + '<td class="r-meta">'+d[2]+'</td>'
+      + '<td class="r-meta">'+d[3]+'</td>'
+      + '<td class="money"><input type="number" class="cell-input" data-idx="'+i+'" data-field="going" value="'+effGoing(i)+'"></td>'
+      + '<td class="money"><input type="number" class="cell-input" data-idx="'+i+'" data-field="worth" value="'+effWorth(i)+'"></td>'
+      + '<td class="money adj adj-cell">'+adjCellHtml(i)+'</td>'
+      + '<td class="deal-cell"><span class="tag '+tagCls+'">'+deal+'</span></td>'
+      + '<td><select class="cell-input status-select status-'+statusVal+'" data-idx="'+i+'" data-field="status">'
+        + '<option value="">&mdash;</option>'
+        + '<option value="Target"'+(statusVal==="Target"?" selected":"")+'>Target</option>'
+        + '<option value="Watch"'+(statusVal==="Watch"?" selected":"")+'>Watch</option>'
+        // Sleeper = end-of-draft $1 guys we'd stretch a dollar or two to get
+        + '<option value="Sleeper"'+(statusVal==="Sleeper"?" selected":"")+'>Sleeper</option>'
+        + '<option value="Pass"'+(statusVal==="Pass"?" selected":"")+'>Pass</option>'
+        + '</select></td>'
+      + '<td><input type="text" class="cell-input notes-input" data-idx="'+i+'" data-field="notes" value="'+escapeAttr(o.notes||"")+'" placeholder="note&hellip;"></td>'
+      + '<td>'+buildSoldHtml(i, s)+'</td>'
+      + '</tr>';
+  });
+  document.getElementById("rows").innerHTML = html || '<tr><td colspan="13" style="text-align:center;color:var(--muted);padding:22px">Nothing matches this filter.</td></tr>';
+}
+
+function renderLog() {
+  var el = document.getElementById("log");
+  if (!effectivePicks.length) { el.innerHTML = "<div>No sales yet.</div>"; return; }
+  var arr = effectivePicks.slice().reverse();
+  var lines = [];
+  arr.forEach(function(p){
+    var md = p.metadata||{};
+    var nm = ((md.first_name||"")+" "+(md.last_name||"")).trim();
+    var amt = parseInt(md.amount,10)||0;
+    var idx = IDX[norm(nm)];
+    var extra = "";
+    if (idx !== undefined && !p.is_keeper) {
+      var diff = amt - effWorth(idx);
+      var cls = diff > 0 ? "paid-over" : (diff < 0 ? "paid-under" : "");
+      extra = ' <span class="'+cls+'">('+(diff>0?"+":"")+diff+' vs board)</span>';
+    }
+    if (p.is_keeper) extra += ' <span style="color:var(--brass)">[keeper]</span>';
+    if (p.manual) extra += ' <span class="manual-tag">MANUAL</span>';
+    lines.push("<div>$"+amt+" &mdash; "+nm+" ("+(md.position||"?")+") &rarr; "+(teamName[p.roster_id]||("Team "+p.roster_id))+extra+"</div>");
+  });
+  el.innerHTML = lines.join("");
+}
+
+function renderAll(){ computeInflation(); renderInflation(); renderTeams(); renderBoard(); renderLog(); populateMyTeam(); updateAdvisor(); }
+
+function pollRenderAll(){
+  computeInflation();
+  renderInflation();
+  renderTeams();
+  var active = document.activeElement;
+  var rowsEl = document.getElementById("rows");
+  if (dragging || (active && rowsEl.contains(active))) {
+    boardDirty = true;
+    refreshAdjCells();   // safe in-place update: Adj cells are not inputs
+  } else {
+    renderBoard();
+  }
+  renderLog();
+  populateMyTeam();
+  updateAdvisor();       // rewrites verdict/cards only, never the bid input
+}
+
+var failCount = 0;
+function poll() {
+  fetchJSON("https://api.sleeper.app/v1/draft/" + DRAFT_ID + "/picks")
+    .then(function(list){
+      failCount = 0;
+      document.getElementById("err-banner").style.display = "none";
+      document.getElementById("live-dot").className = "on";
+      applyPicks(list);
+      var d = new Date();
+      document.getElementById("status-line").textContent = "live · " + list.length + " sold";
+      document.getElementById("updated-line").textContent = "updated " + d.toLocaleTimeString();
+      pollRenderAll();
+    })
+    .catch(function(e){
+      failCount++;
+      document.getElementById("live-dot").className = "err";
+      document.getElementById("status-line").textContent = "connection lost — retrying";
+      if (failCount >= 3) {
+        var b = document.getElementById("err-banner");
+        b.textContent = "Can't reach Sleeper from this page (blocked here, or you're offline). Everything still works manually: log sales with “+ mark sold” and budgets, inflation and the advisor keep up. For live auto-sync, open the downloaded copy of this file.";
+        b.style.display = "block";
+      }
+    });
+}
+
+document.getElementById("pos-chips").addEventListener("click", function(ev){
+  var c = ev.target.closest(".chip"); if (!c) return;
+  posFilter = c.getAttribute("data-pos");
+  this.querySelectorAll(".chip").forEach(function(o){ o.setAttribute("aria-pressed", String(o===c)); });
+  renderBoard();
+});
+document.getElementById("avail-chips").addEventListener("click", function(ev){
+  var c = ev.target.closest(".chip"); if (!c) return;
+  avail = c.getAttribute("data-av");
+  this.querySelectorAll(".chip").forEach(function(o){ o.setAttribute("aria-pressed", String(o===c)); });
+  renderBoard();
+});
+document.getElementById("status-chips").addEventListener("click", function(ev){
+  var c = ev.target.closest(".chip"); if (!c) return;
+  statusFilter = c.getAttribute("data-st");
+  this.querySelectorAll(".chip").forEach(function(o){ o.setAttribute("aria-pressed", String(o===c)); });
+  renderBoard();
+});
+document.getElementById("sort").addEventListener("change", renderBoard);
+
+/* ---------- editable-cell wiring ---------- */
+var rowsEl = document.getElementById("rows");
+
+function updateRowDeal(i) {
+  var tr = rowsEl.querySelector('tr[data-row-idx="'+i+'"]');
+  if (!tr) return;
+  var deal = dealFor(i);
+  var cell = tr.querySelector(".deal-cell");
+  if (cell) cell.innerHTML = '<span class="tag '+dealCls(deal)+'">'+deal+'</span>';
+  var soldCell = tr.querySelector("td:nth-last-child(1)");
+  if (soldByIdx[i] && soldCell) {
+    soldCell.innerHTML = buildSoldHtml(i, soldByIdx[i]); // refresh paid-over/under vs new worth
+  }
+  var nameCell = tr.querySelector(".r-name");
+  if (nameCell) {
+    var o = ov(i);
+    var edited = (o.worth !== undefined && o.worth !== "") || (o.going !== undefined && o.going !== "");
+    var mark = nameCell.querySelector(".edited-mark");
+    if (edited && !mark) nameCell.insertAdjacentHTML("beforeend", '<span class="edited-mark" title="edited">&#9679;</span>');
+    if (!edited && mark) mark.remove();
+  }
+}
+
+rowsEl.addEventListener("input", function(ev){
+  var t = ev.target;
+  if (!t.matches(".cell-input")) return;
+  var i = t.getAttribute("data-idx"), field = t.getAttribute("data-field");
+  if (!OV[i]) OV[i] = {};
+  OV[i][field] = t.value;
+  saveOVSoon();
+  if (field === "worth" || field === "going") updateRowDeal(i);
+  if (field === "worth") { computeInflation(); refreshAdjCells(); } // worth edits move the value pool
+});
+rowsEl.addEventListener("change", function(ev){
+  var t = ev.target;
+  if (!t.matches("select.cell-input")) return;
+  var i = t.getAttribute("data-idx"), field = t.getAttribute("data-field");
+  if (!OV[i]) OV[i] = {};
+  OV[i][field] = t.value;
+  t.className = "cell-input status-select status-" + t.value;
+  saveOVNow();
+  if (field === "status" && statusFilter !== "ALL") renderBoard();
+});
+rowsEl.addEventListener("focusout", function(ev){
+  var t = ev.target;
+  if (t.matches(".cell-input")) saveOVNow();
+  if (boardDirty) { boardDirty = false; renderBoard(); }
+});
+
+rowsEl.addEventListener("click", function(ev){
+  var btn = ev.target.closest("button"); if (!btn) return;
+  var i = btn.getAttribute("data-idx");
+
+  if (btn.classList.contains("mark-sold-btn")) {
+    manualOpenIdx = Number(i);
+    renderBoard();
+    var tr = rowsEl.querySelector('tr[data-row-idx="'+i+'"]');
+    var inp = tr && tr.querySelector(".manual-amt");
+    if (inp) inp.focus();
+    return;
+  }
+  if (btn.classList.contains("manual-cancel")) {
+    manualOpenIdx = null;
+    renderBoard();
+    return;
+  }
+  if (btn.classList.contains("manual-ok")) {
+    var tr2 = rowsEl.querySelector('tr[data-row-idx="'+i+'"]');
+    var amtInp = tr2.querySelector(".manual-amt");
+    var teamSel = tr2.querySelector(".manual-team");
+    var amt = parseInt(amtInp.value, 10);
+    var rid = teamSel.value;
+    if (!amt || amt < 1 || !rid) { amtInp.style.borderColor = "var(--fade)"; teamSel.style.borderColor = rid?"":"var(--fade)"; return; }
+    MS[i] = { amount: amt, rosterId: rid };
+    saveMS();
+    manualOpenIdx = null;
+    applyPicks(picks);
+    renderAll();
+    return;
+  }
+  if (btn.classList.contains("manual-clear")) {
+    delete MS[i];
+    saveMS();
+    applyPicks(picks);
+    renderAll();
+    return;
+  }
+});
+
+/* ---------- bidding-war advisor ---------- */
+var MYTEAM = (function(){ try { return localStorage.getItem("ks26_myteam_v1") || ""; } catch(e){ return ""; } })();
+var advisorIdx = null, advisorBid = null;
+var advEl = document.getElementById("advisor");
+var advBidInput = document.getElementById("adv-bid-input");
+
+// superflex roster shape: below base = real need, below full = has room, else set
+var NEED_BASE = {QB:2, RB:4, WR:5, TE:1};
+var NEED_FULL = {QB:3, RB:6, WR:7, TE:2};
+
+function teamStats(){
+  var st = {};
+  for (var rid in teamName) st[rid] = {spent:0, count:0, pos:{QB:0,RB:0,WR:0,TE:0}, paidNK:0, worthNK:0, big:null};
+  effectivePicks.forEach(function(p){
+    var s = st[p.roster_id]; if (!s) return;
+    var md = p.metadata || {};
+    var amt = parseInt(md.amount,10) || 0;
+    var nm = ((md.first_name||"")+" "+(md.last_name||"")).trim();
+    s.spent += amt; s.count++;
+    if (s.pos[md.position] !== undefined) s.pos[md.position]++;
+    var idx = IDX[norm(nm)];
+    var w = (idx !== undefined) ? effWorth(idx) : amt;   // off-board buys: assume fair
+    if (!p.is_keeper) { s.paidNK += amt; s.worthNK += w; }
+    if (!s.big || amt > s.big.amount) s.big = {name:nm, amount:amt};
+  });
+  for (var r in st) {
+    var s2 = st[r], slots = ROUNDS - s2.count;
+    s2.left = BUDGET - s2.spent;
+    s2.maxBid = slots > 0 ? Math.max(s2.left - (slots - 1), 0) : 0;
+  }
+  return st;
+}
+
+function ceilingFor(i){
+  var o = ov(i);
+  if (o.worth !== undefined && o.worth !== "") return {c:Number(o.worth), why:"your Worth override"};
+  return {c:Math.max(1, Math.round(adjVal(i) * 1.1)), why:"Adj +10%"};
+}
+
+function needFor(s, P){
+  var n = s.pos[P] || 0;
+  if (n < NEED_BASE[P]) return {cls:"need", label:"needs "+P+" (has "+n+")"};
+  if (n < NEED_FULL[P]) return {cls:"mild", label:"room for "+P+" ("+n+")"};
+  return {cls:"full", label:P+" set ("+n+")"};
+}
+
+function discFor(s){
+  if (!s.worthNK || s.worthNK < 10) return {cls:"", label:"no read yet"};
+  var p = Math.round((s.paidNK / s.worthNK - 1) * 100);
+  if (p >= 8) return {cls:"disc-over", label:"pays +"+p+"% over board"};
+  if (p <= -8) return {cls:"disc-under", label:"pays "+p+"% — value hunter"};
+  return {cls:"", label:"pays fair ("+(p>0?"+":"")+p+"%)"};
+}
+
+function openAdvisor(i){
+  advisorIdx = i; advisorBid = null;
+  advBidInput.value = "";
+  var d = DATA[i];
+  document.getElementById("adv-title").innerHTML =
+    d[0] + '<span class="meta">' + d[1] + ' &middot; ' + d[2] + ' &middot; bye ' + d[3] + '</span>';
+  advEl.hidden = false;
+  document.body.classList.add("adv-open");
+  updateAdvisor();
+}
+function closeAdvisor(){
+  advisorIdx = null;
+  advEl.hidden = true;
+  document.body.classList.remove("adv-open");
+}
+
+function updateAdvisor(){
+  if (advisorIdx === null) return;
+  var i = advisorIdx, d = DATA[i], P = d[1];
+  var st = teamStats();
+  var w = effWorth(i), a = adjVal(i);
+  var ceil = ceilingFor(i);
+  var me = MYTEAM && st[MYTEAM] ? st[MYTEAM] : null;
+  var effC = me ? Math.min(ceil.c, me.maxBid) : ceil.c;
+  var B = advisorBid;
+  var sold = soldByIdx[i];
+
+  var head = 'Worth <b>$'+w+'</b> &middot; Adj <b>$'+a+'</b> &middot; ceiling <b>$'+effC+'</b> <span class="call-note">('+ceil.why+(me && ceil.c > me.maxBid ? ", capped by your max bid" : "")+')</span>';
+  var lines = [head];
+
+  if (sold) {
+    lines.push('Sold: <b>$'+sold.amount+'</b> to '+sold.team+(sold.keeper?' (keeper)':'')+' &mdash; '+(sold.amount>w?'<span class="call-walk">+'+(sold.amount-w)+' over worth</span>':'<span class="call-push">'+(sold.amount-w)+' vs worth</span>'));
+  } else {
+    if (me) lines.push('You: <b>$'+me.left+'</b> left &middot; max bid <b>$'+me.maxBid+'</b> &middot; '+needFor(me,P).label);
+    else lines.push('<span class="call-note">Pick your team above to get your side of the math.</span>');
+
+    var rivals = [];
+    for (var rid in st) { if (rid !== MYTEAM) rivals.push({rid:rid, s:st[rid]}); }
+    rivals.sort(function(x,y){ return y.s.maxBid - x.s.maxBid; });
+    var live = rivals.filter(function(r){ return r.s.maxBid >= (B ? B + 1 : 2); });
+    var top = live[0];
+
+    if (B) {
+      if (B > effC) {
+        lines.push('<span class="call-walk">WALK.</span> $'+B+' is past your $'+effC+' ceiling. Whoever wins here eats <b>$'+(B-a)+'</b> over Adj &mdash; let them bleed.');
+      } else {
+        var call = '<span class="call-push">PUSH.</span> $'+B+(B<a?' is under Adj — this is a bargain':'')+'; your ceiling is $'+effC+'.';
+        if (!top) call += ' <b>Nobody can outbid $'+B+' — this is yours.</b>';
+        else if (top.s.maxBid <= effC) call += ' Worst case you win at $'+Math.min(top.s.maxBid+1, effC)+': top threat '+teamName[top.rid]+' dies at $'+top.s.maxBid+'.';
+        else call += ' '+live.length+' team'+(live.length>1?'s':'')+' can go past your ceiling (top: '+teamName[top.rid]+', max $'+top.s.maxBid+'). Every $1 over $'+a+' they pay is value they torch.';
+        lines.push(call);
+      }
+    } else {
+      if (top) lines.push('Top threat: <b>'+teamName[top.rid]+'</b> (max $'+top.s.maxBid+', '+needFor(top.s,P).label+'). '+(top.s.maxBid < effC ? '<span class="call-push">You outlast the room at $'+(top.s.maxBid+1)+'.</span>' : 'They can outgun your $'+effC+' ceiling &mdash; make them pay past $'+a+'.'));
+      lines.push('<span class="call-note">Type the current bid to get a live call.</span>');
+    }
+  }
+  document.getElementById("adv-verdict").innerHTML = lines.join('<br>');
+
+  var cards = '';
+  var all = [];
+  for (var rid2 in st) { if (rid2 !== MYTEAM) all.push({rid:rid2, s:st[rid2]}); }
+  all.sort(function(x,y){ return y.s.maxBid - x.s.maxBid; });
+  all.forEach(function(r){
+    var s = r.s, nd = needFor(s,P), dc = discFor(s);
+    var dead = B ? s.maxBid < B + 1 : s.maxBid < 2;
+    var bigNote = '';
+    if (s.big && s.big.amount >= BUDGET * 0.25) bigNote = '<span class="om disc-over">'+Math.round(s.big.amount/BUDGET*100)+'% on '+s.big.name+'</span>';
+    cards += '<div class="oppo'+(dead?' dead':'')+'">'
+      + '<span class="on">'+teamName[r.rid]+(dead?' — dead':'')+'</span>'
+      + '<span class="om"><b>$'+s.left+'</b> left &middot; max <b>$'+s.maxBid+'</b> &middot; '+s.count+'/'+ROUNDS+'</span>'
+      + '<span class="om">QB '+s.pos.QB+' &middot; RB '+s.pos.RB+' &middot; WR '+s.pos.WR+' &middot; TE '+s.pos.TE+'</span>'
+      + '<span class="'+nd.cls+'">'+nd.label+'</span>'
+      + '<span class="om '+dc.cls+'">'+dc.label+'</span>'
+      + bigNote
+      + '</div>';
+  });
+  document.getElementById("adv-teams").innerHTML = cards || '<span class="note">Waiting for league data&hellip;</span>';
+}
+
+document.getElementById("myteam").addEventListener("change", function(){
+  MYTEAM = this.value;
+  try { localStorage.setItem("ks26_myteam_v1", MYTEAM); } catch(e){}
+  renderTeams();
+  updateAdvisor();
+});
+function populateMyTeam(){
+  var sel = document.getElementById("myteam");
+  if (sel.options.length > 1 || !Object.keys(teamName).length) return;
+  var rids = Object.keys(teamName).sort(function(a,b){ return teamName[a].localeCompare(teamName[b]); });
+  rids.forEach(function(rid){
+    var o = document.createElement("option");
+    o.value = rid; o.textContent = teamName[rid];
+    if (rid === MYTEAM) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+advBidInput.addEventListener("input", function(){
+  var v = parseInt(this.value, 10);
+  advisorBid = (v && v > 0) ? v : null;
+  updateAdvisor();
+});
+advEl.addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if (!b) return;
+  if (b.id === "adv-close") { closeAdvisor(); return; }
+  var step = parseInt(b.getAttribute("data-b"), 10);
+  if (step) {
+    advisorBid = (advisorBid || 0) + step;
+    advBidInput.value = advisorBid;
+    updateAdvisor();
+  }
+});
+rowsEl.addEventListener("click", function(ev){
+  var nm = ev.target.closest(".r-name"); if (!nm) return;
+  var tr = nm.closest("tr[data-row-idx]"); if (!tr) return;
+  openAdvisor(Number(tr.getAttribute("data-row-idx")));
+});
+
+/* ---------- drag-to-rank wiring ---------- */
+function clearDropMarks(){
+  rowsEl.querySelectorAll(".drop-above,.drop-below").forEach(function(x){ x.classList.remove("drop-above","drop-below"); });
+}
+function endDrag(rerender){
+  dragIdx = null; dragging = false;
+  rowsEl.querySelectorAll("tr[draggable]").forEach(function(x){ x.removeAttribute("draggable"); x.classList.remove("dragging"); });
+  clearDropMarks();
+  if (rerender) { boardDirty = false; renderBoard(); }
+}
+rowsEl.addEventListener("mousedown", function(ev){
+  var g = ev.target.closest(".grip");
+  if (!g || g.classList.contains("off")) return;
+  var tr = g.closest("tr[data-row-idx]");
+  if (tr) tr.setAttribute("draggable","true");
+});
+rowsEl.addEventListener("mouseup", function(){
+  if (!dragging) rowsEl.querySelectorAll("tr[draggable]").forEach(function(x){ x.removeAttribute("draggable"); });
+});
+rowsEl.addEventListener("dragstart", function(ev){
+  var tr = ev.target.closest("tr[data-row-idx]");
+  if (!tr || tr.getAttribute("draggable") !== "true") { ev.preventDefault(); return; }
+  dragIdx = Number(tr.getAttribute("data-row-idx"));
+  dragging = true;
+  tr.classList.add("dragging");
+  ev.dataTransfer.effectAllowed = "move";
+  try { ev.dataTransfer.setData("text/plain", String(dragIdx)); } catch(e){}
+});
+rowsEl.addEventListener("dragover", function(ev){
+  if (dragIdx === null) return;
+  var tr = ev.target.closest("tr[data-row-idx]"); if (!tr) return;
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = "move";
+  var rect = tr.getBoundingClientRect();
+  var below = (ev.clientY - rect.top) > rect.height / 2;
+  clearDropMarks();
+  tr.classList.add(below ? "drop-below" : "drop-above");
+});
+rowsEl.addEventListener("drop", function(ev){
+  if (dragIdx === null) return;
+  ev.preventDefault();
+  var tr = ev.target.closest("tr[data-row-idx]");
+  if (tr) {
+    var tIdx = Number(tr.getAttribute("data-row-idx"));
+    if (tIdx !== dragIdx) {
+      var rect = tr.getBoundingClientRect();
+      var below = (ev.clientY - rect.top) > rect.height / 2;
+      RANK.splice(RANK.indexOf(dragIdx), 1);
+      RANK.splice(RANK.indexOf(tIdx) + (below ? 1 : 0), 0, dragIdx);
+      saveRank();
+    }
+  }
+  endDrag(true);
+});
+rowsEl.addEventListener("dragend", function(){ endDrag(true); });
+
+loadTeams().catch(function(){}).then(function(){
+  if (!Object.keys(teamName).length) {
+    for (var rid in FALLBACK_TEAMS) teamName[rid] = FALLBACK_TEAMS[rid];
+  }
+  renderAll();
+  poll();
+  setInterval(poll, 20000);
+});
+</script>
+</body>
+</html>
