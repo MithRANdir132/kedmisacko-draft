@@ -314,7 +314,7 @@
 
   <div class="sync-row">
     <span id="sync-dot" title="sync status"></span>
-    <button type="button" class="chip" id="sync-btn">Sync with Or</button>
+    <button type="button" class="chip" id="sync-btn">Sync board</button>
     <span id="sync-form" hidden>
       <input type="text" id="sync-input" placeholder="paste sync code&hellip;" autocomplete="off">
       <button type="button" class="chip" id="sync-save">Connect</button>
@@ -1241,7 +1241,7 @@ function syncApply(remote){
 function syncSeed(){
   SYNC.seeded = true;
   syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, n:DATA.length})})
-    .then(function(){ syncDot("on", "room created — send Or the same code"); })
+    .then(function(){ syncDot("on", "room created — the other manager pastes the same code"); })
     .catch(function(){ syncDot("err", "couldn't create sync room"); });
 }
 function syncPoll(){
@@ -1277,7 +1277,7 @@ function syncStop(){
 (function(){
   var btn = document.getElementById("sync-btn"), form = document.getElementById("sync-form"),
       inp = document.getElementById("sync-input"), save = document.getElementById("sync-save");
-  function refreshBtn(){ btn.textContent = SYNC.url ? "Sync: change code" : "Sync with Or"; }
+  function refreshBtn(){ btn.textContent = SYNC.url ? "Sync: change code" : "Sync board"; }
   refreshBtn();
   btn.addEventListener("click", function(){
     form.hidden = !form.hidden;
