@@ -13,6 +13,7 @@
     --buy:#1B6455; --buy-tint:#DCEBE5;
     --fade:#9E3E2A; --fade-tint:#F3DFD9;
     --sleep:#33628F;
+    --war:#6D4796;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -23,6 +24,7 @@
       --buy:#57B79F; --buy-tint:#12302A;
       --fade:#DB7A61; --fade-tint:#351B15;
       --sleep:#86B3E0;
+      --war:#B79BE0;
     }
   }
   :root[data-theme="dark"] {
@@ -33,6 +35,7 @@
     --buy:#57B79F; --buy-tint:#12302A;
     --fade:#DB7A61; --fade-tint:#351B15;
     --sleep:#86B3E0;
+    --war:#B79BE0;
   }
   * { box-sizing:border-box; }
   body {
@@ -98,6 +101,10 @@
   .adj-down { color:var(--buy); }
   #inflation-line { font-family:ui-monospace,monospace; font-size:12px; margin-top:8px; }
   #inflation-line b { color:var(--ink); }
+  #war-line { font-family:ui-monospace,monospace; font-size:12px; margin-top:4px; }
+  #war-line b { color:var(--war); }
+  #war-line .over { color:var(--fade); font-weight:700; }
+  #war-line .fits { color:var(--buy); font-weight:700; }
   .info-wrap { position:relative; display:inline-block; margin:0 4px 0 2px; }
   .info-btn {
     width:15px; height:15px; padding:0; border-radius:50%;
@@ -167,6 +174,19 @@
   .status-Watch { color:var(--brass); font-weight:700; }
   .status-Sleeper { color:var(--sleep); font-weight:700; }
   .status-Pass { color:var(--fade); font-weight:700; }
+  .status-BidWar { color:var(--war); font-weight:700; }
+
+  /* --- bid-war max badge --- */
+  .war-badge {
+    display:inline-flex; align-items:center; gap:3px; margin-left:6px;
+    font-family:ui-monospace,monospace; font-size:11px; font-weight:700; color:var(--war);
+    white-space:nowrap; vertical-align:middle;
+  }
+  .war-badge input.war-input { width:46px; color:var(--war); font-weight:700; }
+  .war-flag {
+    color:var(--fade); background:var(--fade-tint); border:1px solid var(--fade); border-radius:2px;
+    padding:0 4px; font-size:10px; letter-spacing:.04em;
+  }
 
   /* --- drag-to-rank --- */
   td.grip-cell { padding:7px 2px 7px 8px; width:22px; }
@@ -196,6 +216,7 @@
   .adv-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 20px; }
   #adv-title { font-weight:800; font-size:16px; }
   #adv-title .meta { font-family:ui-monospace,monospace; font-weight:400; font-size:12px; color:var(--muted); margin-left:8px; }
+  #adv-title .war-tag { font-family:ui-monospace,monospace; font-size:11px; font-weight:700; color:var(--war); border:1px solid var(--war); border-radius:2px; padding:0 5px; margin-left:8px; vertical-align:2px; }
   .adv-bid { display:flex; align-items:center; gap:6px; font-family:ui-monospace,monospace; font-size:12.5px; color:var(--muted); }
   .adv-bid input { width:64px; font-family:ui-monospace,monospace; font-size:14px; text-align:right; padding:4px 6px; border:1px solid var(--line); border-radius:2px; background:var(--paper); color:var(--ink); }
   .adv-bid button { font-family:ui-monospace,monospace; font-size:12px; padding:4px 9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft); border-radius:2px; cursor:pointer; }
@@ -277,6 +298,7 @@
       Each position is tracked separately and blended with the overall number, so a runaway RB market doesn&rsquo;t reprice the QBs.<br><br>
       <b>Adj</b> applies these percentages to Worth: it&rsquo;s what a player should really go for <i>right now</i>. It starts at 0% and moves with every sale.
     </span></span> <span id="inflation-vals">waiting for data&hellip;</span></div>
+    <div class="note" id="war-line" hidden></div>
   </section>
 
   <div class="controls">
@@ -296,6 +318,7 @@
     <div class="chips" id="status-chips" role="group" aria-label="Filter by status">
       <button class="chip" data-st="ALL" aria-pressed="true">Any status</button>
       <button class="chip" data-st="Target" aria-pressed="false">Target</button>
+      <button class="chip" data-st="BidWar" aria-pressed="false">Bid War</button>
       <button class="chip" data-st="Watch" aria-pressed="false">Watch</button>
       <button class="chip" data-st="Sleeper" aria-pressed="false">Sleeper</button>
       <button class="chip" data-st="Pass" aria-pressed="false">Pass</button>
@@ -367,7 +390,7 @@
     </div>
   </div>
 
-  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
 
 </div>
 
@@ -420,7 +443,7 @@ function loadJSON(key, fallback) {
   try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
   catch (e) { return fallback; }
 }
-var OV = loadJSON("ks26_overrides_v1", {});    // {idx: {worth, going, status, notes}}
+var OV = loadJSON("ks26_overrides_v1", {});    // {idx: {worth, going, status, notes, warmax}}
 var MS = loadJSON("ks26_manualsales_v1", {});  // {idx: {amount, rosterId}}
 
 /* pre-seeded statuses — applied only until you set your own for that player */
@@ -536,6 +559,97 @@ function refreshAdjCells(){
     var i = Number(tr.getAttribute("data-row-idx"));
     var cell = tr.querySelector(".adj-cell");
     if (cell) cell.innerHTML = adjCellHtml(i);
+  });
+}
+
+/* ---------- Bid War: recommended max + budget guard ----------
+   A Bid War player is one we're willing to overpay for. His recommended max =
+   Adj value plus a premium — 20% base, boosted up to +50% total when our
+   discretionary spend is pacing behind the room's (so money doesn't die on the
+   bench) — always capped by our live max bid. A typed number in the badge
+   overrides the model (stored in OV[i].warmax, synced like any other override;
+   clear the field to go back to computed). The budget guard is worst-case:
+   already spent + every open Bid War won at its max + $1 for each remaining
+   non-war slot must fit in $200, else everything flags OVER BUDGET. */
+var WAR = { prem:0.20, myMax:BUDGET-ROUNDS+1, n:0, warSum:0, plan:0, over:0, head:0 };
+
+function isWar(i){ return ov(i).status === "BidWar"; }
+
+function recMaxFor(i){
+  var o = ov(i);
+  if (o.warmax !== undefined && o.warmax !== "") {
+    return { v: Math.max(1, Math.min(Number(o.warmax), WAR.myMax)), manual: true };
+  }
+  var a = adjVal(i);
+  var v = Math.max(a + 1, Math.round(1 + (a - 1) * (1 + WAR.prem)));
+  return { v: Math.max(1, Math.min(v, WAR.myMax)), manual: false };
+}
+
+function computeWarState(){
+  var st = teamStats();
+  var me = st[MYTEAM];
+  var spent = me ? me.spent : 0, count = me ? me.count : 0;
+  var slotsLeft = ROUNDS - count;
+  WAR.myMax = me ? me.maxBid : (BUDGET - ROUNDS + 1);
+
+  // premium: 20% base + underspend boost vs the room's pace
+  var roomDisc = 0, myDisc = 0;
+  effectivePicks.forEach(function(p){
+    var a = Math.max((parseInt((p.metadata||{}).amount,10)||0) - 1, 0);
+    roomDisc += a;
+    if (String(p.roster_id) === String(MYTEAM)) myDisc += a;
+  });
+  var nTeams = Object.keys(teamName).length || 12;
+  var frac = roomDisc / (nTeams * (BUDGET - ROUNDS));
+  var prem = 0.20;
+  if (frac >= 0.15) {
+    var expected = (BUDGET - ROUNDS) * frac;
+    if (myDisc < expected) prem += Math.min(0.30, 0.30 * (expected - myDisc) / expected);
+  }
+  WAR.prem = prem;
+
+  // worst case: win every open Bid War at its max, fill the rest at $1
+  var warIdx = [];
+  DATA.forEach(function(d,i){ if (!soldByIdx[i] && isWar(i)) warIdx.push(i); });
+  var warSum = 0;
+  warIdx.forEach(function(i){ warSum += recMaxFor(i).v; });
+  WAR.n = warIdx.length;
+  WAR.warSum = warSum;
+  var fillers = Math.max(slotsLeft - warIdx.length, 0);
+  WAR.plan = spent + warSum + fillers;
+  WAR.over = Math.max(WAR.plan - BUDGET, 0);
+  WAR.head = Math.max(BUDGET - WAR.plan, 0);
+  renderWarLine();
+}
+
+function renderWarLine(){
+  var el = document.getElementById("war-line");
+  if (!el) return;
+  if (!WAR.n) { el.hidden = true; return; }
+  el.hidden = false;
+  var boost = WAR.prem > 0.205 ? " (underspend boost)" : "";
+  var html = '<b>Bid War</b> plan: ' + WAR.n + ' player' + (WAR.n > 1 ? 's' : '')
+    + ' &middot; up to $' + WAR.warSum + ' committed'
+    + ' &middot; premium +' + Math.round(WAR.prem * 100) + '%' + boost + ' &middot; ';
+  if (WAR.over > 0) html += '<span class="over">OVER BUDGET by $' + WAR.over + ' &mdash; trim a max or drop someone</span>';
+  else html += '<span class="fits">fits budget ($' + WAR.head + ' headroom)</span>';
+  el.innerHTML = html;
+}
+
+function warBadgeHtml(i){
+  var r = recMaxFor(i);
+  return 'max $<input type="number" class="cell-input war-input" data-idx="'+i+'" data-field="warmax" min="1" value="'+r.v+'" title="'+(r.manual ? 'your max — clear to go back to computed' : 'recommended max (Adj +'+Math.round(WAR.prem*100)+'%, capped by your max bid) — type to override')+'">'
+    + (r.manual ? '<span class="edited-mark" title="manual max">&#9679;</span>' : '')
+    + (WAR.over > 0 ? ' <span class="war-flag" title="winning every open Bid War at max busts your budget">OVER BUDGET</span>' : '');
+}
+
+function refreshWarBadges(){
+  var ae = document.activeElement;
+  rowsEl.querySelectorAll(".war-badge").forEach(function(sp){
+    if (ae && sp.contains(ae)) return;   // never clobber the field being typed in
+    var inp = sp.querySelector(".war-input");
+    if (!inp) return;
+    sp.innerHTML = warBadgeHtml(Number(inp.getAttribute("data-idx")));
   });
 }
 
@@ -720,11 +834,15 @@ function renderBoard() {
       + '<td><select class="cell-input status-select status-'+statusVal+'" data-idx="'+i+'" data-field="status">'
         + '<option value="">&mdash;</option>'
         + '<option value="Target"'+(statusVal==="Target"?" selected":"")+'>Target</option>'
+        // Bid War = willing to overpay; a live recommended max shows next to this cell
+        + '<option value="BidWar"'+(statusVal==="BidWar"?" selected":"")+'>Bid War</option>'
         + '<option value="Watch"'+(statusVal==="Watch"?" selected":"")+'>Watch</option>'
         // Sleeper = end-of-draft $1 guys we'd stretch a dollar or two to get
         + '<option value="Sleeper"'+(statusVal==="Sleeper"?" selected":"")+'>Sleeper</option>'
         + '<option value="Pass"'+(statusVal==="Pass"?" selected":"")+'>Pass</option>'
-        + '</select></td>'
+        + '</select>'
+        + (statusVal==="BidWar" && !s ? '<span class="war-badge">'+warBadgeHtml(i)+'</span>' : '')
+        + '</td>'
       + '<td><input type="text" class="cell-input notes-input" data-idx="'+i+'" data-field="notes" value="'+escapeAttr(o.notes||"")+'" placeholder="note&hellip;"></td>'
       + '<td>'+buildSoldHtml(i, s)+'</td>'
       + '</tr>';
@@ -755,10 +873,11 @@ function renderLog() {
   el.innerHTML = lines.join("");
 }
 
-function renderAll(){ computeInflation(); renderInflation(); renderTeams(); renderBoard(); renderLog(); populateMyTeam(); updateAdvisor(); }
+function renderAll(){ computeInflation(); computeWarState(); renderInflation(); renderTeams(); renderBoard(); renderLog(); populateMyTeam(); updateAdvisor(); }
 
 function pollRenderAll(){
   computeInflation();
+  computeWarState();
   renderInflation();
   renderTeams();
   var active = document.activeElement;
@@ -766,6 +885,7 @@ function pollRenderAll(){
   if (dragging || (active && rowsEl.contains(active))) {
     boardDirty = true;
     refreshAdjCells();   // safe in-place update: Adj cells are not inputs
+    refreshWarBadges();  // in-place too; skips the focused field
   } else {
     renderBoard();
   }
@@ -878,7 +998,8 @@ rowsEl.addEventListener("input", function(ev){
   saveOVSoon();
   syncPushOV(i);
   if (field === "worth" || field === "going") updateRowDeal(i);
-  if (field === "worth") { computeInflation(); refreshAdjCells(); } // worth edits move the value pool
+  if (field === "worth") { computeInflation(); refreshAdjCells(); computeWarState(); refreshWarBadges(); } // worth edits move the value pool + war maxes
+  if (field === "warmax") { computeWarState(); refreshWarBadges(); }   // replan; skips the field being typed in
 });
 rowsEl.addEventListener("change", function(ev){
   var t = ev.target;
@@ -889,11 +1010,12 @@ rowsEl.addEventListener("change", function(ev){
   t.className = "cell-input status-select status-" + t.value;
   saveOVNow();
   syncPushOV(i);
-  if (field === "status" && statusFilter !== "ALL") renderBoard();
+  if (field === "status") { computeWarState(); renderBoard(); }   // badge appears/disappears + over-budget replan
 });
 rowsEl.addEventListener("focusout", function(ev){
   var t = ev.target;
   if (t.matches(".cell-input")) saveOVNow();
+  if (t.matches(".war-input")) refreshWarBadges();   // field no longer focused: show dot / snap back to computed
   if (boardDirty) { boardDirty = false; renderBoard(); }
 });
 
@@ -981,6 +1103,10 @@ function teamStats(){
 
 function ceilingFor(i){
   var o = ov(i);
+  if (isWar(i)) {
+    var r = recMaxFor(i);
+    return {c: r.v, why: r.manual ? "your Bid War max" : "Bid War max: Adj +" + Math.round(WAR.prem*100) + "%"};
+  }
   if (o.worth !== undefined && o.worth !== "") return {c:Number(o.worth), why:"your Worth override"};
   return {c:Math.max(1, Math.round(adjVal(i) * 1.1)), why:"Adj +10%"};
 }
@@ -1006,7 +1132,8 @@ function openAdvisor(i){
   advBidInput.value = "";
   var d = DATA[i];
   document.getElementById("adv-title").innerHTML =
-    d[0] + '<span class="meta">' + (d[1]==="DEF"?"D/ST":d[1]) + ' &middot; ' + d[2] + ' &middot; bye ' + d[3] + '</span>';
+    d[0] + '<span class="meta">' + (d[1]==="DEF"?"D/ST":d[1]) + ' &middot; ' + d[2] + ' &middot; bye ' + d[3] + '</span>'
+    + (isWar(i) ? '<span class="war-tag">BID WAR</span>' : '');
   advEl.hidden = false;
   document.body.classList.add("adv-open");
   updateAdvisor();
@@ -1035,6 +1162,7 @@ function updateAdvisor(){
     lines.push('Sold: <b>$'+sold.amount+'</b> to '+sold.team+(sold.keeper?' (keeper)':'')+' &mdash; '+(sold.amount>w?'<span class="call-walk">+'+(sold.amount-w)+' over worth</span>':'<span class="call-push">'+(sold.amount-w)+' vs worth</span>'));
   } else {
     if (me) lines.push('You: <b>$'+me.left+'</b> left &middot; max bid <b>$'+me.maxBid+'</b> &middot; '+needFor(me,P).label);
+    if (isWar(i) && WAR.over > 0) lines.push('<span class="call-walk">Bid War plan is $'+WAR.over+' over budget</span> &mdash; winning every open war at max doesn&rsquo;t fit. Trim a max or drop someone.');
 
     var rivals = [];
     for (var rid in st) { if (rid !== MYTEAM) rivals.push({rid:rid, s:st[rid]}); }
