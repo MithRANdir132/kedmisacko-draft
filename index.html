@@ -66,6 +66,19 @@
   .team .tm b { font-size:15px; color:var(--ink); }
   .team .bar { height:4px; background:var(--surface-2); border-radius:2px; overflow:hidden; margin-top:3px; }
   .team .bar i { display:block; height:100%; background:var(--brass); }
+  .tb-edit {
+    border:none; background:transparent; color:var(--muted); cursor:pointer;
+    font-size:11px; line-height:1; padding:0 2px; margin-left:4px; vertical-align:1px;
+  }
+  .tb-edit:hover { color:var(--brass); }
+  .team .tb-note { color:var(--brass); font-size:11px; }
+  .tb-form { display:inline-flex; align-items:center; gap:3px; }
+  .tb-form input {
+    font-family:ui-monospace,monospace; font-size:12px; width:52px; text-align:right;
+    border:1px solid var(--line); border-radius:2px; padding:1px 4px; background:var(--paper); color:var(--ink);
+  }
+  .tb-form input:focus { border-color:var(--brass); outline:none; }
+  .tb-form button { border:1px solid var(--line); background:var(--surface-2); border-radius:2px; cursor:pointer; padding:0 5px; font-size:12px; line-height:1.4; }
 
   .controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding-top:10px; border-top:1px solid var(--line); }
   .chips { display:flex; flex-wrap:wrap; gap:5px; }
@@ -286,7 +299,7 @@
   <div class="err-banner" id="err-banner"></div>
 
   <section>
-    <div class="note" style="margin-bottom:6px">Budgets update live. <b>Max bid</b> = what a team can offer and still fill 16 roster spots at $1 each. Includes manually-entered sales below.</div>
+    <div class="note" style="margin-bottom:6px">Budgets update live. <b>Max bid</b> = what a team can offer and still fill 16 roster spots at $1 each. Includes manually-entered sales below. The &#9998; on a card edits that team's budget for commish-approved trades Sleeper can't record &mdash; pre-loaded: the Herbert deal (Trust the Process pays $21 true keeper cost, $11 goes to The Amateur Guild).</div>
     <div class="teams" id="teams"></div>
     <div id="myteam-row">You are
       <b class="locked-team">Toddler Gurleys</b>
@@ -390,7 +403,7 @@
     </div>
   </div>
 
-  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
 
 </div>
 
@@ -445,6 +458,31 @@ function loadJSON(key, fallback) {
 }
 var OV = loadJSON("ks26_overrides_v1", {});    // {idx: {worth, going, status, notes, warmax}}
 var MS = loadJSON("ks26_manualsales_v1", {});  // {idx: {amount, rosterId}}
+
+/* ---------- per-team budgets (commish trades — Sleeper can't track them) ----------
+   {rosterId: dollars}. Teams absent from the map are at the default $200.
+   Once a team's budget is touched (seeded or edited) it stays stored explicitly,
+   so a later edit back to 200 is NOT re-overwritten by the seed. Synced whole-object
+   like RANK; included in Export/Import codes. */
+var TB = loadJSON("ks26_teambudget_v1", {});
+function saveTB(){ try { localStorage.setItem("ks26_teambudget_v1", JSON.stringify(TB)); } catch(e){} }
+function budgetFor(rid){ var v = Number(TB[rid]); return (TB[rid] !== undefined && isFinite(v) && v > 0) ? v : BUDGET; }
+/* Commish budget trades, seeded Aug 25 — applied only if that team's budget was never set.
+   TB is the team's TOTAL pool; Sleeper's keeper amounts are still subtracted from it.
+   Herbert trade: Trust the Process pays $21 true keeper cost but Sleeper records $10,
+   so their pool is 200-11 = $189 (shows $179 left, max bid $165); The Amateur Guild
+   receives the $11: 200+11 = $211 (with Javonte's $10 keeper: $201 left, max bid $187).
+   NOTE: if the commish ever edits Herbert's keeper price in Sleeper to $21, set
+   roster 3 back to $200 — the $11 would otherwise be double-counted. */
+(function(){
+  var seeds = {"3":189, "12":211};
+  var changed = false;
+  Object.keys(seeds).forEach(function(rid){
+    if (TB[rid] === undefined) { TB[rid] = seeds[rid]; changed = true; }
+  });
+  if (changed) saveTB();
+})();
+var tbOpenRid = null;
 
 /* pre-seeded statuses — applied only until you set your own for that player */
 (function(){
@@ -599,11 +637,14 @@ function computeWarState(){
     roomDisc += a;
     if (String(p.roster_id) === String(MYTEAM)) myDisc += a;
   });
-  var nTeams = Object.keys(teamName).length || 12;
-  var frac = roomDisc / (nTeams * (BUDGET - ROUNDS));
+  var roomDiscPool = 0;
+  for (var rb in teamName) roomDiscPool += Math.max(budgetFor(rb) - ROUNDS, 0);
+  if (!roomDiscPool) roomDiscPool = (Object.keys(teamName).length || 12) * (BUDGET - ROUNDS);
+  var myBud = budgetFor(MYTEAM);
+  var frac = roomDisc / roomDiscPool;
   var prem = 0.20;
   if (frac >= 0.15) {
-    var expected = (BUDGET - ROUNDS) * frac;
+    var expected = (myBud - ROUNDS) * frac;
     if (myDisc < expected) prem += Math.min(0.30, 0.30 * (expected - myDisc) / expected);
   }
   WAR.prem = prem;
@@ -617,8 +658,8 @@ function computeWarState(){
   WAR.warSum = warSum;
   var fillers = Math.max(slotsLeft - warIdx.length, 0);
   WAR.plan = spent + warSum + fillers;
-  WAR.over = Math.max(WAR.plan - BUDGET, 0);
-  WAR.head = Math.max(BUDGET - WAR.plan, 0);
+  WAR.over = Math.max(WAR.plan - myBud, 0);    // measured against MY (possibly traded) budget
+  WAR.head = Math.max(myBud - WAR.plan, 0);
   renderWarLine();
 }
 
@@ -723,6 +764,8 @@ function applyPicks(list) {
 }
 
 function renderTeams() {
+  var aeT = document.activeElement;
+  if (aeT && aeT.classList && aeT.classList.contains("tb-input")) return;   // never clobber an open budget edit
   var spent = {}, count = {};
   for (var rid in teamName) { spent[rid]=0; count[rid]=0; }
   effectivePicks.forEach(function(p){
@@ -734,13 +777,21 @@ function renderTeams() {
   var rids = Object.keys(teamName).sort(function(a,b){ return (spent[b]||0)-(spent[a]||0); });
   rids.forEach(function(rid){
     var sp = spent[rid]||0, ct = count[rid]||0;
-    var rem = BUDGET - sp;
+    var bud = budgetFor(rid);
+    var rem = bud - sp;
     var slotsLeft = ROUNDS - ct;
     var maxBid = slotsLeft > 0 ? rem - (slotsLeft - 1) : 0;
-    html += '<div class="team'+(rid===MYTEAM?' me':'')+'"><span class="tn" title="'+teamName[rid]+'">'+teamName[rid]+'</span>'
-      + '<span class="tm"><b>$'+rem+'</b> left &middot; '+ct+'/'+ROUNDS+'</span>'
-      + '<span class="tm">max bid $'+Math.max(maxBid,0)+'</span>'
-      + '<span class="bar"><i style="width:'+Math.min(100,(sp/BUDGET)*100)+'%"></i></span></div>';
+    html += '<div class="team'+(rid===MYTEAM?' me':'')+'" data-rid="'+rid+'"><span class="tn" title="'+teamName[rid]+' — pencil edits this team\'s budget (commish trades)">'+teamName[rid]
+      + '<button type="button" class="tb-edit" data-rid="'+rid+'" title="edit budget (commish trade)">&#9998;</button></span>';
+    if (tbOpenRid === rid) {
+      html += '<span class="tm tb-form">budget $<input type="number" class="tb-input" data-rid="'+rid+'" min="'+ROUNDS+'" value="'+bud+'">'
+        + '<button type="button" class="tb-ok manual-ok" data-rid="'+rid+'" title="save">&check;</button>'
+        + '<button type="button" class="tb-cancel manual-cancel" data-rid="'+rid+'" title="cancel">&times;</button></span>';
+    } else {
+      html += '<span class="tm"><b>$'+rem+'</b> left &middot; '+ct+'/'+ROUNDS+'</span>'
+        + '<span class="tm">max bid $'+Math.max(maxBid,0)+(bud !== BUDGET ? ' &middot; <span class="tb-note">budget $'+bud+'</span>' : '')+'</span>';
+    }
+    html += '<span class="bar"><i style="width:'+Math.min(100,Math.max(0,(sp/bud))*100)+'%"></i></span></div>';
   });
   document.getElementById("teams").innerHTML = html || '<div class="note">Waiting for league data&hellip;</div>';
 }
@@ -939,6 +990,38 @@ document.getElementById("status-chips").addEventListener("click", function(ev){
 });
 document.getElementById("sort").addEventListener("change", renderBoard);
 
+/* ---------- per-team budget editing (commish trades) ---------- */
+var teamsEl = document.getElementById("teams");
+function tbSave(rid){
+  var inp = teamsEl.querySelector('.tb-input[data-rid="'+rid+'"]'); if (!inp) return;
+  var v = parseInt(inp.value, 10);
+  if (!v || v < ROUNDS) { inp.style.borderColor = "var(--fade)"; return; }
+  TB[rid] = v;
+  saveTB();
+  syncPush("/tb", TB);
+  tbOpenRid = null;
+  inp.blur();
+  renderAll();   // budgets ripple into max bids, the advisor and the Bid War plan
+}
+teamsEl.addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if (!b) return;
+  var rid = b.getAttribute("data-rid");
+  if (b.classList.contains("tb-edit")) {
+    tbOpenRid = rid;
+    renderTeams();
+    var inp = teamsEl.querySelector('.tb-input[data-rid="'+rid+'"]');
+    if (inp) { inp.focus(); inp.select(); }
+    return;
+  }
+  if (b.classList.contains("tb-cancel")) { tbOpenRid = null; renderTeams(); return; }
+  if (b.classList.contains("tb-ok")) { tbSave(rid); return; }
+});
+teamsEl.addEventListener("keydown", function(ev){
+  if (!ev.target.classList || !ev.target.classList.contains("tb-input")) return;
+  if (ev.key === "Enter") { tbSave(ev.target.getAttribute("data-rid")); }
+  if (ev.key === "Escape") { ev.target.blur(); tbOpenRid = null; renderTeams(); }
+});
+
 /* ---------- player search ---------- */
 var psBtn = document.getElementById("psearch-btn");
 var psInput = document.getElementById("psearch");
@@ -1095,7 +1178,8 @@ function teamStats(){
   });
   for (var r in st) {
     var s2 = st[r], slots = ROUNDS - s2.count;
-    s2.left = BUDGET - s2.spent;
+    s2.budget = budgetFor(r);
+    s2.left = s2.budget - s2.spent;
     s2.maxBid = slots > 0 ? Math.max(s2.left - (slots - 1), 0) : 0;
   }
   return st;
@@ -1351,6 +1435,15 @@ function syncApply(remote){
       if (ok && JSON.stringify(remote.rank) !== JSON.stringify(RANK)) { RANK = remote.rank.slice(); saveRank(); changed = true; }
     }
   }
+  if (remote.tb) {
+    var tbFocused = ae && ae.classList && ae.classList.contains("tb-input");
+    if (SYNC.pend["/tb"] || syncHeld("/tb") || tbFocused) { SYNC.deferred++; }
+    else {
+      var tbOk = typeof remote.tb === "object" && !Array.isArray(remote.tb) &&
+                 Object.keys(remote.tb).every(function(k){ var v = Number(remote.tb[k]); return isFinite(v) && v >= ROUNDS; });
+      if (tbOk && JSON.stringify(remote.tb) !== JSON.stringify(TB)) { TB = remote.tb; saveTB(); changed = true; }
+    }
+  }
   var rms = remote.ms || {}, msSeen = {};
   Object.keys(rms).forEach(function(k){
     msSeen[k] = 1;
@@ -1368,7 +1461,7 @@ function syncApply(remote){
 
 function syncSeed(){
   SYNC.seeded = true;
-  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, n:DATA.length})})
+  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, n:DATA.length})})
     .then(function(){ syncDot("on", "room created — the other manager pastes the same code"); })
     .catch(function(){ syncDot("err", "couldn't create sync room"); });
 }
@@ -1427,7 +1520,7 @@ function syncStop(){
       impForm = document.getElementById("imp-form"), impInp = document.getElementById("imp-input"),
       impOk = document.getElementById("imp-ok");
   expBtn.addEventListener("click", function(){
-    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, n:DATA.length}))));
+    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, n:DATA.length}))));
     function done(ok){ syncDot(SYNC.on ? "on" : "", ok ? "board code copied — paste it anywhere safe" : "copy blocked — see console"); if (!ok) console.log(code); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(code).then(function(){ done(true); }, function(){ done(false); });
@@ -1447,7 +1540,8 @@ function syncStop(){
       OV = obj.ov || {};
       if (Array.isArray(obj.rank) && obj.rank.length === DATA.length) RANK = obj.rank;
       MS = obj.ms || {};
-      saveOVNow(); saveRank(); saveMS();
+      if (obj.tb && typeof obj.tb === "object" && !Array.isArray(obj.tb)) TB = obj.tb;
+      saveOVNow(); saveRank(); saveMS(); saveTB();
       applyPicks(picks); renderAll();
       if (SYNC.on) syncSeed();   // imported board becomes the shared board
       syncDot(SYNC.on ? "on" : "", "board loaded");
