@@ -215,6 +215,8 @@
   /* --- bidding-war advisor --- */
   tr .r-name { cursor:pointer; }
   tr .r-name:hover { text-decoration:underline; text-decoration-style:dotted; text-underline-offset:3px; }
+  tr.keeper-row .r-name { cursor:default; }
+  tr.keeper-row .r-name:hover { text-decoration:line-through; }
   .team.me { border-color:var(--brass); box-shadow:inset 0 0 0 1px var(--brass); }
   #myteam-row { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
   #myteam-row .locked-team { color:var(--brass); font-size:13px; }
@@ -871,7 +873,7 @@ function renderBoard() {
     var edited = (o.worth !== undefined && o.worth !== "") || (o.going !== undefined && o.going !== "");
     var statusVal = o.status || "";
     var rankShown = canDrag ? (rp[i]+1) : (k+1);
-    html += '<tr class="'+(s?"sold":"mysort")+'" data-row-idx="'+i+'">'
+    html += '<tr class="'+(s?"sold"+(s.keeper?" keeper-row":""):"mysort")+'" data-row-idx="'+i+'">'
       + '<td class="grip-cell"><span class="grip'+(canDrag?'':' off')+'" title="'+(canDrag?'drag to reorder':'switch Sort to &quot;My rank&quot; to reorder')+'">&#x283F;</span></td>'
       + '<td class="r-rank">'+rankShown+'</td>'
       + '<td class="r-name">'+d[0]+(edited?'<span class="edited-mark" title="edited">&#9679;</span>':'')+'</td>'
@@ -1230,6 +1232,8 @@ function closeAdvisor(){
 
 function updateAdvisor(){
   if (advisorIdx === null) return;
+  var sk = soldByIdx[advisorIdx];
+  if (sk && sk.keeper) { closeAdvisor(); return; }   // keepers were never on the block
   var i = advisorIdx, d = DATA[i], P = d[1];
   var st = teamStats();
   var w = effWorth(i), a = adjVal(i);
@@ -1312,7 +1316,10 @@ advEl.addEventListener("click", function(ev){
 rowsEl.addEventListener("click", function(ev){
   var nm = ev.target.closest(".r-name"); if (!nm) return;
   var tr = nm.closest("tr[data-row-idx]"); if (!tr) return;
-  openAdvisor(Number(tr.getAttribute("data-row-idx")));
+  var ki = Number(tr.getAttribute("data-row-idx"));
+  var ks = soldByIdx[ki];
+  if (ks && ks.keeper) return;   // keepers were never on the block — no advisor
+  openAdvisor(ki);
 });
 
 /* ---------- drag-to-rank wiring ---------- */
