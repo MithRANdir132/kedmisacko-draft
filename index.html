@@ -235,6 +235,19 @@
   .manual-cancel { color:var(--fade); }
   .manual-tag { font-family:ui-monospace,monospace; font-size:10px; font-weight:700; color:var(--brass); }
   .manual-clear { border:none !important; background:none !important; color:var(--muted) !important; cursor:pointer; font-size:13px; padding:0 2px !important; }
+
+  /* --- two-browser sync + export/import --- */
+  .sync-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:12px; }
+  #sync-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; flex:none; }
+  #sync-dot.on { background:var(--buy); }
+  #sync-dot.err { background:var(--fade); }
+  .sync-row input {
+    font-family:ui-monospace,monospace; font-size:12px; padding:4px 6px;
+    border:1px solid var(--line); border-radius:2px; background:var(--surface); color:var(--ink);
+    width:min(360px,58vw);
+  }
+  .sync-row input:focus { border-color:var(--brass); outline:none; }
+  #sync-status { font-family:ui-monospace,monospace; }
 </style>
 </head>
 <body>
@@ -299,6 +312,22 @@
     </label>
   </div>
 
+  <div class="sync-row">
+    <span id="sync-dot" title="sync status"></span>
+    <button type="button" class="chip" id="sync-btn">Sync with Or</button>
+    <span id="sync-form" hidden>
+      <input type="text" id="sync-input" placeholder="paste sync code&hellip;" autocomplete="off">
+      <button type="button" class="chip" id="sync-save">Connect</button>
+    </span>
+    <span class="note" id="sync-status"></span>
+    <button type="button" class="chip" id="exp-btn" title="Copy your whole board (tags, notes, rank, overrides) as a backup code">Export</button>
+    <button type="button" class="chip" id="imp-btn">Import</button>
+    <span id="imp-form" hidden>
+      <input type="text" id="imp-input" placeholder="paste board code&hellip;" autocomplete="off">
+      <button type="button" class="chip" id="imp-ok">Load</button>
+    </span>
+  </div>
+
   <div class="board-wrap">
     <table>
       <thead>
@@ -338,7 +367,7 @@
     </div>
   </div>
 
-  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. Keep this tab open during the draft.</p>
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
 
 </div>
 
@@ -847,6 +876,7 @@ rowsEl.addEventListener("input", function(ev){
   if (!OV[i]) OV[i] = {};
   OV[i][field] = t.value;
   saveOVSoon();
+  syncPushOV(i);
   if (field === "worth" || field === "going") updateRowDeal(i);
   if (field === "worth") { computeInflation(); refreshAdjCells(); } // worth edits move the value pool
 });
@@ -858,6 +888,7 @@ rowsEl.addEventListener("change", function(ev){
   OV[i][field] = t.value;
   t.className = "cell-input status-select status-" + t.value;
   saveOVNow();
+  syncPushOV(i);
   if (field === "status" && statusFilter !== "ALL") renderBoard();
 });
 rowsEl.addEventListener("focusout", function(ev){
@@ -892,6 +923,7 @@ rowsEl.addEventListener("click", function(ev){
     if (!amt || amt < 1 || !rid) { amtInp.style.borderColor = "var(--fade)"; teamSel.style.borderColor = rid?"":"var(--fade)"; return; }
     MS[i] = { amount: amt, rosterId: rid };
     saveMS();
+    syncPush("/ms/" + i, MS[i]);
     manualOpenIdx = null;
     applyPicks(picks);
     renderAll();
@@ -900,6 +932,7 @@ rowsEl.addEventListener("click", function(ev){
   if (btn.classList.contains("manual-clear")) {
     delete MS[i];
     saveMS();
+    syncPush("/ms/" + i, null);
     applyPicks(picks);
     renderAll();
     return;
@@ -1120,11 +1153,181 @@ rowsEl.addEventListener("drop", function(ev){
       RANK.splice(RANK.indexOf(dragIdx), 1);
       RANK.splice(RANK.indexOf(tIdx) + (below ? 1 : 0), 0, dragIdx);
       saveRank();
+      syncPush("/rank", RANK);
     }
   }
   endDrag(true);
 });
 rowsEl.addEventListener("dragend", function(){ endDrag(true); });
+
+/* ---------- two-browser sync (Firebase Realtime DB over REST) ----------
+   The sync code is the RTDB URL plus a room path, e.g.
+     https://YOURDB-default-rtdb.europe-west1.firebasedatabase.app/rooms/ks26-SECRET
+   Nothing secret is baked into this public file: the code lives in each browser's
+   localStorage and is shared out-of-band. Everything is fail-safe: sync off or DB
+   unreachable = the page behaves exactly as before, local-only.
+   Model: per-player OV objects, RANK array and per-player manual sales are pushed
+   (debounced 500ms) and polled every 3s. Last write wins per player. Inbound never
+   touches the field you're typing in, or anything pushed in the last 2.5s. */
+var SYNC = { url:null, on:false, badVer:false, seeded:false, pend:{}, hold:{}, lastSnap:"", timer:null };
+(function(){ try { SYNC.url = localStorage.getItem("ks26_sync_v1") || null; } catch(e){} })();
+
+function syncDot(state, msg){
+  var d = document.getElementById("sync-dot"); if (d) d.className = state || "";
+  var s = document.getElementById("sync-status"); if (s) s.textContent = msg || "";
+}
+function syncFetch(path, opts){
+  return fetch(SYNC.url + path + ".json", opts).then(function(r){
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  });
+}
+function syncHeld(key){ return (SYNC.hold[key] || 0) > Date.now(); }
+
+function syncPush(key, value){   // key: "/ov/12", "/rank", "/ms/40"
+  if (!SYNC.on || SYNC.badVer) return;
+  clearTimeout(SYNC.pend[key]);
+  SYNC.pend[key] = setTimeout(function(){
+    delete SYNC.pend[key];
+    SYNC.hold[key] = Date.now() + 2500;
+    syncFetch(key, {method:"PUT", body:JSON.stringify(value === undefined ? null : value)})
+      .then(function(){ syncDot("on", "synced"); })
+      .catch(function(){ syncDot("err", "sync offline — running local-only"); });
+  }, 500);
+}
+function syncPushOV(i){ syncPush("/ov/" + i, OV[i] || null); }
+
+function syncApply(remote){
+  if (!remote) return false;
+  if (remote.n && remote.n !== DATA.length) {
+    SYNC.badVer = true;
+    syncDot("err", "sync uses a different file version — hard-refresh this page");
+    return false;
+  }
+  SYNC.badVer = false;
+  var changed = false;
+  SYNC.deferred = 0;   // skipped keys → snapshot must not be cached, so the next poll retries
+  function skip(key, focusKey){ if (SYNC.pend[key] || syncHeld(key) || key === focusKey) { SYNC.deferred++; return true; } return false; }
+  var focusKey = null, ae = document.activeElement;
+  if (ae && ae.matches && ae.matches(".cell-input")) focusKey = "/ov/" + ae.getAttribute("data-idx");
+  var rov = remote.ov || {};
+  Object.keys(rov).forEach(function(k){
+    if (skip("/ov/" + k, focusKey)) return;
+    if (JSON.stringify(OV[k] || null) !== JSON.stringify(rov[k])) { OV[k] = rov[k]; changed = true; }
+  });
+  if (remote.rank) {
+    if (dragging || SYNC.pend["/rank"] || syncHeld("/rank")) { SYNC.deferred++; }
+    else {
+      var ok = Array.isArray(remote.rank) && remote.rank.length === DATA.length &&
+               remote.rank.every(function(x){ return typeof x === "number" && x >= 0 && x < DATA.length; });
+      if (ok && JSON.stringify(remote.rank) !== JSON.stringify(RANK)) { RANK = remote.rank.slice(); saveRank(); changed = true; }
+    }
+  }
+  var rms = remote.ms || {}, msSeen = {};
+  Object.keys(rms).forEach(function(k){
+    msSeen[k] = 1;
+    if (skip("/ms/" + k, null)) return;
+    if (JSON.stringify(MS[k] || null) !== JSON.stringify(rms[k])) { MS[k] = rms[k]; changed = true; }
+  });
+  Object.keys(MS).forEach(function(k){
+    if (msSeen[k]) return;
+    if (skip("/ms/" + k, null)) return;
+    delete MS[k]; changed = true;
+  });
+  if (changed) { saveOVNow(); saveMS(); applyPicks(picks); }
+  return changed;
+}
+
+function syncSeed(){
+  SYNC.seeded = true;
+  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, n:DATA.length})})
+    .then(function(){ syncDot("on", "room created — send Or the same code"); })
+    .catch(function(){ syncDot("err", "couldn't create sync room"); });
+}
+function syncPoll(){
+  if (!SYNC.on) return;
+  syncFetch("", {cache:"no-store"}).then(function(remote){
+    if (remote === null) { if (!SYNC.seeded) syncSeed(); return; }
+    SYNC.seeded = true;
+    var snap = JSON.stringify(remote);
+    if (snap !== SYNC.lastSnap) {
+      var changed = syncApply(remote);
+      if (!SYNC.deferred) SYNC.lastSnap = snap;   // anything skipped → re-apply on next poll
+      if (changed) pollRenderAll();
+    }
+    if (!SYNC.badVer) syncDot("on", "synced");
+  }).catch(function(){ syncDot("err", "sync offline — running local-only"); });
+}
+function syncStart(){
+  if (!SYNC.url) return;
+  SYNC.on = true; SYNC.seeded = false; SYNC.lastSnap = "";
+  syncDot("", "connecting…");
+  if (SYNC.timer) clearInterval(SYNC.timer);
+  syncPoll();
+  SYNC.timer = setInterval(syncPoll, 3000);
+}
+function syncStop(){
+  SYNC.on = false; SYNC.url = null;
+  if (SYNC.timer) clearInterval(SYNC.timer);
+  try { localStorage.removeItem("ks26_sync_v1"); } catch(e){}
+  syncDot("", "sync off");
+}
+
+/* sync + export/import UI */
+(function(){
+  var btn = document.getElementById("sync-btn"), form = document.getElementById("sync-form"),
+      inp = document.getElementById("sync-input"), save = document.getElementById("sync-save");
+  function refreshBtn(){ btn.textContent = SYNC.url ? "Sync: change code" : "Sync with Or"; }
+  refreshBtn();
+  btn.addEventListener("click", function(){
+    form.hidden = !form.hidden;
+    if (!form.hidden) { inp.value = SYNC.url || ""; inp.focus(); }
+  });
+  save.addEventListener("click", function(){
+    var v = inp.value.trim().replace(/\.json$/, "").replace(/\/+$/, "");
+    form.hidden = true;
+    if (!v) { syncStop(); refreshBtn(); return; }
+    if (!/^https:\/\/[^\s]+\.(firebaseio\.com|firebasedatabase\.app)(\/[^\s]*)?$/.test(v)) {
+      syncDot("err", "that doesn't look like a sync code"); return;
+    }
+    SYNC.url = v;
+    try { localStorage.setItem("ks26_sync_v1", v); } catch(e){}
+    refreshBtn(); syncStart();
+  });
+
+  var expBtn = document.getElementById("exp-btn"), impBtn = document.getElementById("imp-btn"),
+      impForm = document.getElementById("imp-form"), impInp = document.getElementById("imp-input"),
+      impOk = document.getElementById("imp-ok");
+  expBtn.addEventListener("click", function(){
+    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, n:DATA.length}))));
+    function done(ok){ syncDot(SYNC.on ? "on" : "", ok ? "board code copied — paste it anywhere safe" : "copy blocked — see console"); if (!ok) console.log(code); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function(){ done(true); }, function(){ done(false); });
+    } else done(false);
+  });
+  impBtn.addEventListener("click", function(){
+    impForm.hidden = !impForm.hidden;
+    if (!impForm.hidden) impInp.focus();
+  });
+  impOk.addEventListener("click", function(){
+    var v = impInp.value.trim();
+    impForm.hidden = true; impInp.value = "";
+    if (v.indexOf("KS26:") !== 0) { syncDot(SYNC.on ? "on" : "err", "not a board code"); return; }
+    try {
+      var obj = JSON.parse(decodeURIComponent(escape(atob(v.slice(5)))));
+      if (obj.n !== DATA.length) { syncDot("err", "board code is from a different file version"); return; }
+      OV = obj.ov || {};
+      if (Array.isArray(obj.rank) && obj.rank.length === DATA.length) RANK = obj.rank;
+      MS = obj.ms || {};
+      saveOVNow(); saveRank(); saveMS();
+      applyPicks(picks); renderAll();
+      if (SYNC.on) syncSeed();   // imported board becomes the shared board
+      syncDot(SYNC.on ? "on" : "", "board loaded");
+    } catch(e) { syncDot("err", "couldn't read that code"); }
+  });
+
+  if (SYNC.url) syncStart();   // reconnect automatically on every page load
+})();
 
 loadTeams().catch(function(){}).then(function(){
   if (!Object.keys(teamName).length) {
