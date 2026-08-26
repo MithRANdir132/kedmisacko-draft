@@ -284,6 +284,25 @@
   }
   .sync-row input:focus { border-color:var(--brass); outline:none; }
   #sync-status { font-family:ui-monospace,monospace; }
+
+  /* --- position tiers (position filter + My rank sort) --- */
+  tr.tier-row td {
+    background:var(--surface-2); border-bottom:1px solid var(--line);
+    padding:5px 12px 5px 10px; font-family:ui-monospace,monospace; font-size:11px;
+    text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft);
+  }
+  tr.tier-row .tier-grip { cursor:grab; color:var(--muted); font-size:13px; user-select:none; display:inline-block; padding:1px 3px; margin-right:7px; }
+  tr.tier-row .tier-grip:hover { color:var(--ink-soft); }
+  tr.tier-row .tier-label { font-weight:800; color:var(--brass); margin-right:10px; }
+  tr.tier-row .tier-count { color:var(--muted); margin-right:4px; }
+  tr.tier-row .tier-count.scarce { color:var(--fade); font-weight:700; }
+  .tier-btn {
+    border:1px dashed var(--line); background:transparent; color:var(--muted);
+    border-radius:2px; cursor:pointer; font-family:ui-monospace,monospace; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.05em; padding:1px 7px; margin-left:8px;
+  }
+  .tier-btn:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
+  tr.tier-row.dragging td { opacity:.4; }
 </style>
 </head>
 <body>
@@ -405,7 +424,7 @@
     </div>
   </div>
 
-  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. <b>Tiers</b>: filter to a single position (Sort on "My rank") and hit "+ add tier break" to split that position into quality classes. Breaks are draggable dividers — a tier holds however many players you put between them, and each position can have its own count (up to 12 tiers). "Split" halves a tier, "merge &uarr;" removes a break, and dragging a player across a break re-tiers him without moving anyone else. Sold players stay counted in their tier, so headers show what's left live — and the advisor warns you when a player is the last of his tier. Tiers ride sync and Export/Import like everything else. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
 
 </div>
 
@@ -519,6 +538,79 @@ var RANK = loadJSON("ks26_rank_v1", null);
 function saveRank(){ try { localStorage.setItem("ks26_rank_v1", JSON.stringify(RANK)); } catch(e){} }
 function rankPosMap(){ var m = {}; RANK.forEach(function(idx,p){ m[idx] = p; }); return m; }
 var dragIdx = null, dragging = false;
+var dragCutI = null, dragCutP = null;   // tier-break drag: index into that position's cuts array + the position
+
+/* ---------- position tiers ----------
+   TIERS = {pos: [cut, cut, ...]} — each cut is a COUNT: the tier break sits after
+   that many players in the position's My-rank order (sold players included, so
+   tiers don't reshuffle as guys sell). Tier t = everyone between break t-1 and
+   break t; sizes are free-form. Dragging a player across a break re-tiers HIM and
+   the cuts shift so everyone else stays put. Visible only with a single position
+   filtered + Sort "My rank". Synced whole-object at /tiers (like /tb); rides
+   Export/Import. Storage key ks26_tiers_v1. */
+var TIERS = loadJSON("ks26_tiers_v1", {});
+function saveTiers(){ try { localStorage.setItem("ks26_tiers_v1", JSON.stringify(TIERS)); } catch(e){} }
+function posOrderOf(P){ return RANK.filter(function(i){ return DATA[i][1] === P; }); }
+function cutsOf(P, len){
+  var raw = TIERS[P];
+  if (!Array.isArray(raw) || !raw.length) return [];
+  var out = [];
+  raw.forEach(function(c){
+    c = Math.round(Number(c));
+    if (isFinite(c) && c >= 1 && c <= len - 1 && out.indexOf(c) === -1) out.push(c);
+  });
+  out.sort(function(a,b){ return a-b; });
+  return out;
+}
+function setCuts(P, cuts){
+  if (cuts.length) TIERS[P] = cuts; else delete TIERS[P];
+  saveTiers();
+  syncPush("/tiers", TIERS);
+}
+/* keep everyone else's tier stable when one player moves from oldPos to newPos
+   in his position's order; joinUpper decides the boundary-exact case (the moved
+   player lands as the last man of the tier above the break, not the first below) */
+function shiftCutsForMove(P, len, oldPos, newPos, joinUpper){
+  var cs = cutsOf(P, len);
+  if (!cs.length || oldPos < 0 || newPos < 0) return;
+  cs = cs.map(function(c){ return c > oldPos ? c - 1 : c; });
+  cs = cs.map(function(c){ return (c > newPos || (c === newPos && joinUpper)) ? c + 1 : c; });
+  var ded = [];
+  cs.sort(function(a,b){ return a-b; }).forEach(function(c){
+    if (c >= 1 && c <= len - 1 && ded.indexOf(c) === -1) ded.push(c);
+  });
+  if (JSON.stringify(ded) !== JSON.stringify(cutsOf(P, len))) setCuts(P, ded);
+}
+function tierInfoFor(i){   // {t, left, size, tiers} for an on-board player, or null when his position has no tiers
+  var P = DATA[i][1];
+  var order = posOrderOf(P);
+  var cuts = cutsOf(P, order.length);
+  if (!cuts.length) return null;
+  var pi = order.indexOf(i);
+  if (pi === -1) return null;
+  var t = 1;
+  cuts.forEach(function(c){ if (pi >= c) t++; });
+  var start = t === 1 ? 0 : cuts[t-2];
+  var end = t <= cuts.length ? cuts[t-1] : order.length;
+  var left = 0;
+  for (var k = start; k < end; k++) if (!soldByIdx[order[k]]) left++;
+  return {t:t, left:left, size:end-start, tiers:cuts.length+1};
+}
+function tierHeaderHtml(P, t, cuts, order, nT){
+  var start = t === 1 ? 0 : cuts[t-2];
+  var end = t <= cuts.length ? cuts[t-1] : order.length;
+  var size = end - start, left = 0;
+  for (var k = start; k < end; k++) if (!soldByIdx[order[k]]) left++;
+  var cntCls = left <= 2 ? "tier-count scarce" : "tier-count";
+  var cnt = left + " of " + size + " left" + (left === 1 ? " &mdash; last one" : (left === 0 ? " &mdash; gone" : ""));
+  var h = '<tr class="tier-row" data-tier="'+t+'"><td colspan="13">';
+  if (t >= 2) h += '<span class="tier-grip" title="drag to move this tier break">&#x283F;</span>';
+  h += '<span class="tier-label">Tier '+t+'</span><span class="'+cntCls+'">'+cnt+'</span>';
+  if (size >= 2 && nT < 12) h += '<button type="button" class="tier-btn tier-split" data-tier="'+t+'" title="split this tier in two">split</button>';
+  if (t >= 2) h += '<button type="button" class="tier-btn tier-merge" data-tier="'+t+'" title="merge into the tier above">merge &uarr;</button>';
+  h += '</td></tr>';
+  return h;
+}
 
 function saveOVNow(){ try { localStorage.setItem("ks26_overrides_v1", JSON.stringify(OV)); } catch(e){} }
 function saveOVSoon(){ clearTimeout(ovSaveTimer); ovSaveTimer = setTimeout(saveOVNow, 400); }
@@ -866,14 +958,14 @@ function renderBoard() {
   });
   var canDrag = (mode === "myrank");
   var html = "";
-  rows.forEach(function(r, k){
+  function buildRow(r, k){
     var d = r.d, s = r.s, i = r.i, o = ov(i);
     var deal = dealFor(i);
     var tagCls = dealCls(deal);
     var edited = (o.worth !== undefined && o.worth !== "") || (o.going !== undefined && o.going !== "");
     var statusVal = o.status || "";
     var rankShown = canDrag ? (rp[i]+1) : (k+1);
-    html += '<tr class="'+(s?"sold":"mysort")+'" data-row-idx="'+i+'">'
+    return '<tr class="'+(s?"sold":"mysort")+'" data-row-idx="'+i+'">'
       + '<td class="grip-cell"><span class="grip'+(canDrag?'':' off')+'" title="'+(canDrag?'drag to reorder':'switch Sort to &quot;My rank&quot; to reorder')+'">&#x283F;</span></td>'
       + '<td class="r-rank">'+rankShown+'</td>'
       + '<td class="r-name">'+d[0]+(edited?'<span class="edited-mark" title="edited">&#9679;</span>':'')+'</td>'
@@ -899,8 +991,47 @@ function renderBoard() {
       + '<td><input type="text" class="cell-input notes-input" data-idx="'+i+'" data-field="notes" value="'+escapeAttr(o.notes||"")+'" placeholder="note&hellip;"></td>'
       + '<td>'+buildSoldHtml(i, s)+'</td>'
       + '</tr>';
-  });
+  }
+  // tiers live only in a positional view of YOUR order — never the global ranking
+  var tierView = posFilter !== "ALL" && mode === "myrank" && !searchQ;
+  var tOrder = tierView ? posOrderOf(posFilter) : null;
+  var tCuts = tierView ? cutsOf(posFilter, tOrder.length) : [];
+  if (tierView && tCuts.length) {
+    var nT = tCuts.length + 1;
+    var tPosPos = {};
+    tOrder.forEach(function(idx,p){ tPosPos[idx] = p; });
+    var buckets = [];
+    for (var b = 0; b < nT; b++) buckets.push([]);
+    rows.forEach(function(r){
+      var pp = tPosPos[r.i], t = 1;
+      tCuts.forEach(function(c){ if (pp >= c) t++; });
+      buckets[t-1].push(r);
+    });
+    var k2 = 0;
+    for (var t3 = 1; t3 <= nT; t3++){
+      html += tierHeaderHtml(posFilter, t3, tCuts, tOrder, nT);
+      buckets[t3-1].forEach(function(r){ html += buildRow(r, k2++); });
+    }
+  } else {
+    rows.forEach(function(r, k){ html += buildRow(r, k); });
+    if (tierView && rows.length && tOrder.length >= 2) {
+      html = '<tr class="tier-row"><td colspan="13"><span class="tier-label">Tiers</span>'
+        + '<button type="button" class="tier-btn tier-start">+ add tier break</button>'
+        + '<span class="tier-count">split this position into quality classes &mdash; breaks are draggable, any size</span></td></tr>' + html;
+    }
+  }
   document.getElementById("rows").innerHTML = html || '<tr><td colspan="13" style="text-align:center;color:var(--muted);padding:22px">Nothing matches this filter.</td></tr>';
+}
+function refreshTierHeaders(){
+  var tierView = posFilter !== "ALL" && document.getElementById("sort").value === "myrank" && !searchQ;
+  if (!tierView || dragging) return;
+  var order = posOrderOf(posFilter), cuts = cutsOf(posFilter, order.length);
+  if (!cuts.length) return;
+  var nT = cuts.length + 1;
+  rowsEl.querySelectorAll("tr.tier-row[data-tier]").forEach(function(tr){
+    var t = Number(tr.getAttribute("data-tier"));
+    if (t >= 1 && t <= nT) tr.outerHTML = tierHeaderHtml(posFilter, t, cuts, order, nT);
+  });
 }
 
 function renderLog() {
@@ -939,6 +1070,7 @@ function pollRenderAll(){
     boardDirty = true;
     refreshAdjCells();   // safe in-place update: Adj cells are not inputs
     refreshWarBadges();  // in-place too; skips the focused field
+    refreshTierHeaders(); // tier "x left" counts follow sales; skipped mid-drag
   } else {
     renderBoard();
   }
@@ -1108,6 +1240,38 @@ rowsEl.addEventListener("click", function(ev){
   var btn = ev.target.closest("button"); if (!btn) return;
   var i = btn.getAttribute("data-idx");
 
+  if (btn.classList.contains("tier-start")) {
+    var ordS = posOrderOf(posFilter);
+    if (posFilter !== "ALL" && ordS.length >= 2) {
+      setCuts(posFilter, [Math.min(3, ordS.length - 1)]);
+      renderBoard();
+    }
+    return;
+  }
+  if (btn.classList.contains("tier-split")) {
+    var tS = Number(btn.getAttribute("data-tier"));
+    var ordSp = posOrderOf(posFilter), csSp = cutsOf(posFilter, ordSp.length);
+    var stSp = tS === 1 ? 0 : csSp[tS-2];
+    var enSp = tS <= csSp.length ? csSp[tS-1] : ordSp.length;
+    var mid = Math.floor((stSp + enSp) / 2);
+    if (mid > stSp && mid < enSp) {
+      csSp.push(mid);
+      csSp.sort(function(a,b){ return a-b; });
+      setCuts(posFilter, csSp);
+      renderBoard();
+    }
+    return;
+  }
+  if (btn.classList.contains("tier-merge")) {
+    var tM = Number(btn.getAttribute("data-tier"));
+    var csM = cutsOf(posFilter, posOrderOf(posFilter).length);
+    if (tM >= 2 && csM.length >= tM - 1) {
+      csM.splice(tM - 2, 1);
+      setCuts(posFilter, csM);
+      renderBoard();
+    }
+    return;
+  }
   if (btn.classList.contains("mark-sold-btn")) {
     manualOpenIdx = Number(i);
     renderBoard();
@@ -1249,6 +1413,13 @@ function updateAdvisor(){
     lines.push('Sold: <b>$'+sold.amount+'</b> to '+sold.team+(sold.keeper?' (keeper)':'')+' &mdash; '+(sold.amount>w?'<span class="call-walk">+'+(sold.amount-w)+' over worth</span>':'<span class="call-push">'+(sold.amount-w)+' vs worth</span>'));
   } else {
     if (me) lines.push('You: <b>$'+me.left+'</b> left &middot; max bid <b>$'+me.maxBid+'</b> &middot; '+needFor(me,P).label);
+    var ti = tierInfoFor(i);
+    if (ti) {
+      var posLbl = P === "DEF" ? "D/ST" : P;
+      if (ti.left <= 1) lines.push('<span class="call-walk">Last one left in '+posLbl+' Tier '+ti.t+'</span>'+(ti.t < ti.tiers ? ' &mdash; after him the position drops a tier. Expect the room to push.' : ' &mdash; and it&rsquo;s the last tier you rated.'));
+      else if (ti.left === 2) lines.push('Tier '+ti.t+' '+posLbl+': only <b>2 left</b> &mdash; scarcity bidding starts here.');
+      else lines.push('<span class="call-note">Tier '+ti.t+' '+posLbl+' &middot; '+ti.left+' of '+ti.size+' left.</span>');
+    }
     if (isWar(i) && WAR.over > 0) lines.push('<span class="call-walk">Bid War plan is $'+WAR.over+' over budget</span> &mdash; winning every open war at max doesn&rsquo;t fit. Trim a max or drop someone.');
 
     var rivals = [];
@@ -1325,23 +1496,33 @@ function clearDropMarks(){
   rowsEl.querySelectorAll(".drop-above,.drop-below").forEach(function(x){ x.classList.remove("drop-above","drop-below"); });
 }
 function endDrag(rerender){
-  dragIdx = null; dragging = false;
+  dragIdx = null; dragging = false; dragCutI = null; dragCutP = null;
   rowsEl.querySelectorAll("tr[draggable]").forEach(function(x){ x.removeAttribute("draggable"); x.classList.remove("dragging"); });
   clearDropMarks();
   if (rerender) { boardDirty = false; renderBoard(); }
 }
 rowsEl.addEventListener("mousedown", function(ev){
-  var g = ev.target.closest(".grip");
+  var g = ev.target.closest(".grip, .tier-grip");
   if (!g || g.classList.contains("off")) return;
-  var tr = g.closest("tr[data-row-idx]");
+  var tr = g.closest("tr[data-row-idx], tr.tier-row");
   if (tr) tr.setAttribute("draggable","true");
 });
 rowsEl.addEventListener("mouseup", function(){
   if (!dragging) rowsEl.querySelectorAll("tr[draggable]").forEach(function(x){ x.removeAttribute("draggable"); });
 });
 rowsEl.addEventListener("dragstart", function(ev){
-  var tr = ev.target.closest("tr[data-row-idx]");
+  var tr = ev.target.closest("tr");
   if (!tr || tr.getAttribute("draggable") !== "true") { ev.preventDefault(); return; }
+  if (tr.classList.contains("tier-row")) {
+    var t = Number(tr.getAttribute("data-tier"));
+    if (!(t >= 2)) { ev.preventDefault(); return; }   // tier 1 has no break above it; starter row isn't draggable
+    dragCutI = t - 2; dragCutP = posFilter; dragging = true;
+    tr.classList.add("dragging");
+    ev.dataTransfer.effectAllowed = "move";
+    try { ev.dataTransfer.setData("text/plain", "cut:" + dragCutI); } catch(e){}
+    return;
+  }
+  if (!tr.hasAttribute("data-row-idx")) { ev.preventDefault(); return; }
   dragIdx = Number(tr.getAttribute("data-row-idx"));
   dragging = true;
   tr.classList.add("dragging");
@@ -1349,8 +1530,12 @@ rowsEl.addEventListener("dragstart", function(ev){
   try { ev.dataTransfer.setData("text/plain", String(dragIdx)); } catch(e){}
 });
 rowsEl.addEventListener("dragover", function(ev){
-  if (dragIdx === null) return;
-  var tr = ev.target.closest("tr[data-row-idx]"); if (!tr) return;
+  if (dragIdx === null && dragCutI === null) return;
+  var tr = ev.target.closest("tr[data-row-idx], tr.tier-row"); if (!tr) return;
+  if (tr.classList.contains("tier-row")) {
+    if (dragIdx === null) return;                                 // a break can't drop on a break
+    if (!(Number(tr.getAttribute("data-tier")) >= 2)) return;     // tier-1 header / starter row: not a boundary
+  }
   ev.preventDefault();
   ev.dataTransfer.dropEffect = "move";
   var rect = tr.getBoundingClientRect();
@@ -1359,16 +1544,66 @@ rowsEl.addEventListener("dragover", function(ev){
   tr.classList.add(below ? "drop-below" : "drop-above");
 });
 rowsEl.addEventListener("drop", function(ev){
-  if (dragIdx === null) return;
+  if (dragIdx === null && dragCutI === null) return;
   ev.preventDefault();
-  var tr = ev.target.closest("tr[data-row-idx]");
+  var tr = ev.target.closest("tr[data-row-idx], tr.tier-row");
+
+  if (dragCutI !== null) {           // moving a tier break onto a player row
+    if (tr && tr.hasAttribute("data-row-idx")) {
+      var tIdx0 = Number(tr.getAttribute("data-row-idx"));
+      if (DATA[tIdx0][1] === dragCutP) {
+        var ord0 = posOrderOf(dragCutP);
+        var rect0 = tr.getBoundingClientRect();
+        var below0 = (ev.clientY - rect0.top) > rect0.height / 2;
+        var v = ord0.indexOf(tIdx0) + (below0 ? 1 : 0);
+        v = Math.max(1, Math.min(v, ord0.length - 1));
+        var cs0 = cutsOf(dragCutP, ord0.length);
+        cs0.splice(dragCutI, 1);
+        if (cs0.indexOf(v) === -1) cs0.push(v);   // landing on another break merges the two
+        cs0.sort(function(a,b){ return a-b; });
+        setCuts(dragCutP, cs0);
+      }
+    }
+    endDrag(true);
+    return;
+  }
+
   if (tr) {
-    var tIdx = Number(tr.getAttribute("data-row-idx"));
-    if (tIdx !== dragIdx) {
-      var rect = tr.getBoundingClientRect();
-      var below = (ev.clientY - rect.top) > rect.height / 2;
-      RANK.splice(RANK.indexOf(dragIdx), 1);
-      RANK.splice(RANK.indexOf(tIdx) + (below ? 1 : 0), 0, dragIdx);
+    var P = DATA[dragIdx][1];
+    var lenP = posOrderOf(P).length;
+    var oldPos = posOrderOf(P).indexOf(dragIdx);
+    var movedRank = false, newPos = -1, joinUpper = false;
+
+    if (tr.classList.contains("tier-row")) {
+      // dropped straight on a tier break: top half = last man of the tier above, bottom half = first of the tier below
+      var tno = Number(tr.getAttribute("data-tier"));
+      if (tno >= 2 && P === posFilter) {
+        var rectH = tr.getBoundingClientRect();
+        joinUpper = (ev.clientY - rectH.top) <= rectH.height / 2;
+        var csB = cutsOf(P, lenP).map(function(c){ return c > oldPos ? c - 1 : c; });
+        var bpos = csB[tno - 2];
+        RANK.splice(RANK.indexOf(dragIdx), 1);
+        var ordR = posOrderOf(P);
+        if (bpos < ordR.length) RANK.splice(RANK.indexOf(ordR[bpos]), 0, dragIdx);
+        else if (ordR.length) RANK.splice(RANK.indexOf(ordR[ordR.length - 1]) + 1, 0, dragIdx);
+        else RANK.push(dragIdx);
+        newPos = bpos; movedRank = true;
+      }
+    } else {
+      var tIdx = Number(tr.getAttribute("data-row-idx"));
+      if (tIdx !== dragIdx) {
+        var rect = tr.getBoundingClientRect();
+        var below = (ev.clientY - rect.top) > rect.height / 2;
+        RANK.splice(RANK.indexOf(dragIdx), 1);
+        RANK.splice(RANK.indexOf(tIdx) + (below ? 1 : 0), 0, dragIdx);
+        newPos = posOrderOf(P).indexOf(dragIdx);
+        joinUpper = below && DATA[tIdx][1] === P;   // "just under him" keeps you in his tier, not the one below the break
+        movedRank = true;
+      }
+    }
+
+    if (movedRank) {
+      shiftCutsForMove(P, lenP, oldPos, newPos, joinUpper);
       saveRank();
       syncPush("/rank", RANK);
     }
@@ -1449,6 +1684,17 @@ function syncApply(remote){
       if (tbOk && JSON.stringify(remote.tb) !== JSON.stringify(TB)) { TB = remote.tb; saveTB(); changed = true; }
     }
   }
+  if (remote.tiers) {
+    if (SYNC.pend["/tiers"] || syncHeld("/tiers") || dragging) { SYNC.deferred++; }
+    else {
+      var trOk = typeof remote.tiers === "object" && !Array.isArray(remote.tiers) &&
+                 Object.keys(remote.tiers).every(function(k){
+                   var a = remote.tiers[k];
+                   return Array.isArray(a) && a.every(function(c){ var v = Number(c); return isFinite(v) && v >= 1; });
+                 });
+      if (trOk && JSON.stringify(remote.tiers) !== JSON.stringify(TIERS)) { TIERS = remote.tiers; saveTiers(); changed = true; }
+    }
+  }
   var rms = remote.ms || {}, msSeen = {};
   Object.keys(rms).forEach(function(k){
     msSeen[k] = 1;
@@ -1466,7 +1712,7 @@ function syncApply(remote){
 
 function syncSeed(){
   SYNC.seeded = true;
-  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, n:DATA.length})})
+  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, tiers:TIERS, n:DATA.length})})
     .then(function(){ syncDot("on", "room created — the other manager pastes the same code"); })
     .catch(function(){ syncDot("err", "couldn't create sync room"); });
 }
@@ -1525,7 +1771,7 @@ function syncStop(){
       impForm = document.getElementById("imp-form"), impInp = document.getElementById("imp-input"),
       impOk = document.getElementById("imp-ok");
   expBtn.addEventListener("click", function(){
-    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, n:DATA.length}))));
+    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, tiers:TIERS, n:DATA.length}))));
     function done(ok){ syncDot(SYNC.on ? "on" : "", ok ? "board code copied — paste it anywhere safe" : "copy blocked — see console"); if (!ok) console.log(code); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(code).then(function(){ done(true); }, function(){ done(false); });
@@ -1546,7 +1792,8 @@ function syncStop(){
       if (Array.isArray(obj.rank) && obj.rank.length === DATA.length) RANK = obj.rank;
       MS = obj.ms || {};
       if (obj.tb && typeof obj.tb === "object" && !Array.isArray(obj.tb)) TB = obj.tb;
-      saveOVNow(); saveRank(); saveMS(); saveTB();
+      TIERS = (obj.tiers && typeof obj.tiers === "object" && !Array.isArray(obj.tiers)) ? obj.tiers : {};
+      saveOVNow(); saveRank(); saveMS(); saveTB(); saveTiers();
       applyPicks(picks); renderAll();
       if (SYNC.on) syncSeed();   // imported board becomes the shared board
       syncDot(SYNC.on ? "on" : "", "board loaded");
