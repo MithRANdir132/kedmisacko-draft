@@ -38,6 +38,7 @@
     --war:#B79BE0;
   }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
   body {
     margin:0; background:var(--paper); color:var(--ink);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -303,6 +304,166 @@
   }
   .tier-btn:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
   tr.tier-row.dragging td { opacity:.4; }
+
+  /* --- compact team cards --- */
+  .teams { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:5px; }
+  .teams.collapsed { display:none; }
+  .team { padding:5px 9px; gap:0; }
+  .team .tn { font-size:12px; }
+  .team .tline { font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums; font-size:11.5px; color:var(--ink-soft); }
+  .team .tline b { color:var(--ink); font-weight:700; }
+  .team .bar { margin-top:3px; }
+  .teams-head {
+    display:flex; align-items:center; gap:8px; margin-bottom:5px;
+    font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  }
+  .teams-head .mini {
+    border:none; background:transparent; color:var(--muted); cursor:pointer;
+    font-family:ui-monospace,monospace; font-size:11px; letter-spacing:.05em; padding:1px 5px;
+    text-transform:uppercase; border:1px dashed var(--line); border-radius:2px;
+  }
+  .teams-head .mini:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
+
+  /* --- view tabs: Board | My Plan --- */
+  .viewtabs { display:flex; gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; align-self:flex-start; }
+  .viewtabs button {
+    font-family:inherit; text-transform:uppercase; letter-spacing:.06em; font-weight:600; font-size:12px;
+    padding:6px 16px; border:none; background:var(--surface); color:var(--ink-soft); cursor:pointer;
+  }
+  .viewtabs button + button { border-left:1px solid var(--line); }
+  .viewtabs button[aria-pressed="true"] { background:var(--ink); color:var(--paper); }
+  .viewtabs button:focus-visible { outline:2px solid var(--brass); outline-offset:-2px; }
+  .viewtabs .vt-count { font-family:ui-monospace,monospace; font-weight:400; opacity:.75; margin-left:6px; }
+
+  /* --- plan view --- */
+  #planview { display:flex; flex-direction:column; gap:12px; }
+  .plan-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+  .plan-chips { display:flex; gap:4px; }
+  .plan-chip {
+    font-family:ui-monospace,monospace; font-size:12px; padding:4px 11px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); border-radius:2px;
+  }
+  .plan-chip[aria-pressed="true"] { background:var(--brass); border-color:var(--brass); color:var(--paper); font-weight:700; }
+  .plan-act {
+    font-family:ui-monospace,monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+    padding:4px 9px; border:1px dashed var(--line); background:transparent; color:var(--muted);
+    border-radius:2px; cursor:pointer;
+  }
+  .plan-act:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
+  .plan-act.solid { border-style:solid; color:var(--ink-soft); }
+  #plan-name {
+    font-family:ui-monospace,monospace; font-size:12px; background:var(--paper); color:var(--ink);
+    border:1px solid var(--line); border-radius:2px; padding:3px 6px; width:130px;
+  }
+  #plan-name:focus { border-color:var(--brass); outline:none; }
+
+  .plan-strip {
+    font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums; font-size:12.5px;
+    background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:8px 12px;
+    display:flex; flex-wrap:wrap; gap:4px 18px; align-items:center;
+  }
+  .plan-strip b { color:var(--ink); font-size:14px; }
+  .plan-strip .lbl { color:var(--muted); }
+  .plan-strip .ok { color:var(--buy); font-weight:700; }
+  .plan-strip .bad { color:var(--fade); font-weight:700; }
+  .plan-strip .surplus-up { color:var(--buy); font-weight:700; }
+  .plan-strip .surplus-down { color:var(--fade); font-weight:700; }
+
+  .plan-search-wrap { position:relative; }
+  #plan-search {
+    font-family:ui-monospace,monospace; font-size:12.5px; color:var(--ink);
+    background:var(--paper); border:1px solid var(--line); border-radius:2px;
+    padding:5px 8px; width:min(280px,60vw);
+  }
+  #plan-search:focus { border-color:var(--brass); outline:none; }
+  #plan-results {
+    position:absolute; z-index:30; left:0; top:32px; width:min(340px,80vw);
+    background:var(--surface); border:1px solid var(--line); border-radius:3px;
+    box-shadow:0 4px 14px rgba(0,0,0,.18); max-height:260px; overflow-y:auto;
+  }
+  #plan-results button {
+    display:flex; width:100%; align-items:center; gap:8px; text-align:left;
+    border:none; border-bottom:1px solid var(--line-soft); background:transparent; cursor:pointer;
+    padding:6px 10px; font-family:ui-monospace,monospace; font-size:12px; color:var(--ink);
+  }
+  #plan-results button:last-child { border-bottom:none; }
+  #plan-results button:hover, #plan-results button.sel { background:var(--surface-2); }
+  #plan-results .pr-name { font-family:ui-sans-serif,system-ui,sans-serif; font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #plan-results .pr-cost { color:var(--brass); font-weight:700; }
+  #plan-results .pr-none { padding:8px 10px; color:var(--muted); font-size:12px; font-family:ui-sans-serif,system-ui,sans-serif; }
+
+  .plan-cols { display:grid; grid-template-columns:1fr; gap:12px; }
+  @media (min-width:1000px) { .plan-cols { grid-template-columns:1.35fr 1fr; } }
+  .plan-group { border:1px solid var(--line); border-radius:3px; background:var(--surface); overflow:hidden; }
+  .plan-group h3 {
+    margin:0; padding:7px 12px; background:var(--surface-2); border-bottom:1px solid var(--line);
+    font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600;
+    display:flex; justify-content:space-between; gap:10px;
+  }
+  .plan-group h3 .gsum { font-family:ui-monospace,monospace; color:var(--ink-soft); }
+  .pslot {
+    display:flex; align-items:center; gap:8px; padding:5px 10px;
+    border-bottom:1px solid var(--line-soft); font-size:13px;
+  }
+  .plan-group .pslot:last-child { border-bottom:0; }
+  .pslot.empty { color:var(--muted); }
+  .pslot.drop-in { background:var(--brass-tint); }
+  .pslot .sgrip { cursor:grab; color:var(--muted); font-size:12px; user-select:none; padding:0 1px; }
+  .pslot .sgrip.off { opacity:.2; cursor:default; }
+  .pslot .slabel {
+    font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.05em; color:var(--muted);
+    min-width:52px; text-transform:uppercase;
+  }
+  .pslot .sname { font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pslot .sname .sbye { font-family:ui-monospace,monospace; font-weight:400; font-size:11px; color:var(--muted); margin-left:6px; }
+  .pslot.empty .sname { font-weight:400; font-style:italic; cursor:pointer; }
+  .pslot .sworth { font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); white-space:nowrap; }
+  .pslot input.sprice {
+    font-family:ui-monospace,monospace; font-size:12.5px; font-weight:700; text-align:right; width:52px;
+    background:transparent; color:var(--ink); border:1px solid transparent; border-radius:2px; padding:2px 4px;
+  }
+  .pslot input.sprice:hover { border-color:var(--line); }
+  .pslot input.sprice:focus { border-color:var(--brass); background:var(--surface-2); outline:none; }
+  .pslot .slock { font-family:ui-monospace,monospace; font-size:12.5px; font-weight:700; width:52px; text-align:right; color:var(--brass); }
+  .pslot .sswap {
+    border:1px solid transparent; background:none; color:var(--muted); cursor:pointer;
+    font-size:12px; line-height:1; padding:2px 4px; border-radius:2px; min-width:20px;
+  }
+  .pslot .sswap:hover { color:var(--brass); border-color:var(--brass); }
+  .pslot .sswap.pinned { color:var(--brass); border-color:var(--line); }
+  .pslot .sx { border:none; background:none; color:var(--muted); cursor:pointer; font-size:14px; line-height:1; padding:0 3px; }
+  .pslot .sx:hover { color:var(--fade); }
+  .pslot .stag { font-family:ui-monospace,monospace; font-size:9.5px; font-weight:700; letter-spacing:.05em; padding:1px 4px; border-radius:2px; }
+  .stag.lock { background:var(--brass-tint); color:var(--brass); }
+  .stag.war { border:1px solid var(--war); color:var(--war); }
+  .pslot.dragging { opacity:.35; }
+
+  .plan-gone { border:1px solid var(--fade); border-radius:3px; background:var(--fade-tint); padding:7px 12px; font-size:12.5px; }
+  .plan-gone .gline { font-family:ui-monospace,monospace; display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:2px 0; }
+  .plan-gone .gname { font-family:ui-sans-serif,system-ui,sans-serif; font-weight:700; text-decoration:line-through; color:var(--fade); }
+  .plan-gone .gbtn { font-family:ui-monospace,monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; border:1px solid var(--fade); background:transparent; color:var(--fade); border-radius:2px; cursor:pointer; padding:1px 6px; }
+  .plan-gone .gbtn:hover { background:var(--fade); color:var(--paper); }
+
+  .plan-compare { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; }
+  .pc {
+    border:1px solid var(--line); border-radius:3px; background:var(--surface); padding:7px 10px;
+    font-family:ui-monospace,monospace; font-size:11.5px; color:var(--ink-soft); cursor:pointer;
+  }
+  .pc.on { border-color:var(--brass); box-shadow:inset 0 0 0 1px var(--brass); }
+  .pc .pcn { font-family:ui-sans-serif,system-ui,sans-serif; font-weight:700; font-size:12.5px; color:var(--ink); margin-bottom:2px; }
+  .pc .pcbad { color:var(--fade); font-weight:700; }
+
+  /* board: + adds to plan, sitting next to the rank grip */
+  td.grip-cell { width:44px; white-space:nowrap; }
+  .plan-add {
+    border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer;
+    border-radius:2px; font-family:ui-monospace,monospace; font-size:12px; line-height:1;
+    padding:2px 5px; margin-left:2px;
+  }
+  .plan-add:hover { color:var(--brass); border-color:var(--brass); }
+  .plan-add.inplan { color:var(--brass); border-color:var(--brass); background:var(--brass-tint); }
+  .plan-add.off { opacity:.2; cursor:default; }
+  .plan-add.off:hover { color:var(--muted); border-color:var(--line); }
 </style>
 </head>
 <body>
@@ -320,12 +481,16 @@
   <div class="err-banner" id="err-banner"></div>
 
   <section>
-    <div class="note" style="margin-bottom:6px">Budgets update live. <b>Max bid</b> = what a team can offer and still fill 16 roster spots at $1 each. Includes manually-entered sales below. The &#9998; on a card edits that team's budget for commish-approved trades Sleeper can't record &mdash; pre-loaded: the Herbert deal (Trust the Process pays $21 true keeper cost, $11 goes to The Amateur Guild).</div>
-    <div class="teams" id="teams"></div>
-    <div id="myteam-row">You are
-      <b class="locked-team">Toddler Gurleys</b>
-      <span class="note" style="text-transform:none;letter-spacing:normal;font-weight:400">&mdash; click any available player name to open the bidding advisor</span>
+    <div class="teams-head">
+      <span>Room</span>
+      <span class="info-wrap"><button type="button" class="info-btn" aria-label="How budgets work">i</button><span class="info-pop" role="tooltip">
+        Budgets update live. <b>Max bid</b> = what a team can offer and still fill 16 roster spots at $1 each. Includes manually-entered sales below.<br><br>
+        The <b>&#9998;</b> on a card edits that team's budget for commish-approved trades Sleeper can't record &mdash; pre-loaded: the Herbert deal (Trust the Process pays $21 true keeper cost, $11 goes to The Amateur Guild).<br><br>
+        You are <b>Toddler Gurleys</b> (gold border). Click any available player name for the bidding advisor.
+      </span></span>
+      <button type="button" class="mini" id="teams-toggle" aria-expanded="true">hide</button>
     </div>
+    <div class="teams" id="teams"></div>
     <div class="note" id="inflation-line"><b>Inflation</b><span class="info-wrap"><button type="button" class="info-btn" aria-label="How inflation works">i</button><span class="info-pop" role="tooltip">
       The room started with $2,400, and every roster spot costs at least $1. This line compares the <b>money still in the room</b> to the <b>value still on the board</b>.<br><br>
       When someone lands a player for less than he&rsquo;s worth (cheap keepers, early bargains), leftover cash chases less talent &mdash; prices on everyone remaining drift <b>up</b>. When someone overpays, money leaves faster than value &mdash; the rest of the board gets <b>cheaper</b>.<br><br>
@@ -334,6 +499,35 @@
     </span></span> <span id="inflation-vals">waiting for data&hellip;</span></div>
     <div class="note" id="war-line" hidden></div>
   </section>
+
+  <div class="viewtabs" id="viewtabs" role="group" aria-label="Switch view">
+    <button type="button" data-view="board" aria-pressed="true">Board only</button>
+    <button type="button" data-view="plan" aria-pressed="false">Board + My Plan<span class="vt-count" id="vt-count"></span></button>
+  </div>
+
+  <div id="planview" hidden>
+    <div class="plan-bar">
+      <div class="plan-chips" id="plan-chips" role="group" aria-label="Switch plan"></div>
+      <label class="field" style="gap:5px">rename<input type="text" id="plan-name" maxlength="22" aria-label="Rename this plan" title="rename the plan you're on"></label>
+      <span class="plan-search-wrap">
+        <input type="text" id="plan-search" placeholder="add a player&hellip; (2+ letters)" autocomplete="off">
+        <div id="plan-results" hidden></div>
+      </span>
+      <button type="button" class="plan-act solid" id="fill-bal" title="Spread what's left across the empty starting slots, best player your rank allows inside each slot's share">Fill balanced</button>
+      <button type="button" class="plan-act" id="fill-best" title="Walk your rank from the top and buy until the money runs out — stars and scrubs">Fill best available</button>
+      <button type="button" class="plan-act" id="lineup-reset" title="Drop every start/bench pin you set and let the lineup sort itself by My rank again">Reset lineup</button>
+      <button type="button" class="plan-act" id="plan-clear-empty" title="Remove every planned player, keep the ones you've actually won">Clear plan</button>
+    </div>
+    <div class="plan-strip" id="plan-strip"></div>
+    <div id="plan-gone"></div>
+    <div class="plan-cols">
+      <div class="plan-group"><h3><span>Starters</span><span class="gsum" id="start-sum"></span></h3><div id="plan-starters"></div></div>
+      <div class="plan-group"><h3><span>Bench</span><span class="gsum" id="bench-sum"></span></h3><div id="plan-bench"></div></div>
+    </div>
+    <div class="plan-compare" id="plan-compare"></div>
+    <div><button type="button" class="plan-act" id="plan-help-btn" aria-expanded="false">how this works</button></div>
+    <p class="note" id="plan-help" hidden></p>
+  </div>
 
   <div class="controls">
     <div class="chips" id="pos-chips" role="group" aria-label="Filter by position">
@@ -424,7 +618,7 @@
     </div>
   </div>
 
-  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. <b>Ashton Jeanty &amp; Mike Washington Jr. repriced by hand Aug 26:</b> the Aug 23 pull caught the hours when Jeanty's practice injury looked season-ending; the follow-up news (low ankle sprain, no structural damage, hopeful for Wk 1, full strength by Wk 2&ndash;3) puts him back at a ~top-10 pick &mdash; set to $30 going / $35 worth. Mike Washington Jr. stays at $1/$1 &mdash; handcuffs clear at a buck in this room, and his upside is conditional on owning Jeanty, which is a Notes/Sleeper call, not a board price. Re-check practice reports before Friday: if Jeanty is ruled out for Wk 1, shave him a few dollars and Washington becomes a real $2&ndash;3 stretch. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. <b>Tiers</b>: filter to a single position (Sort on "My rank") and hit "+ add tier break" to split that position into quality classes. Breaks are draggable dividers — a tier holds however many players you put between them, and each position can have its own count (up to 12 tiers). "Split" halves a tier, "merge &uarr;" removes a break, and dragging a player across a break re-tiers him without moving anyone else. Sold players stay counted in their tier, so headers show what's left live — and the advisor warns you when a player is the last of his tier. Tiers ride sync and Export/Import like everything else. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. <b>Ashton Jeanty &amp; Mike Washington Jr. repriced by hand Aug 26:</b> the Aug 23 pull caught the hours when Jeanty's practice injury looked season-ending; the follow-up news (low ankle sprain, no structural damage, hopeful for Wk 1, full strength by Wk 2&ndash;3) puts him back at a ~top-10 pick &mdash; set to $30 going / $35 worth. Mike Washington Jr. stays at $1/$1 &mdash; handcuffs clear at a buck in this room, and his upside is conditional on owning Jeanty, which is a Notes/Sleeper call, not a board price. Re-check practice reports before Friday: if Jeanty is ruled out for Wk 1, shave him a few dollars and Washington becomes a real $2&ndash;3 stretch. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. <b>Tiers</b>: filter to a single position (Sort on "My rank") and hit "+ add tier break" to split that position into quality classes. Breaks are draggable dividers — a tier holds however many players you put between them, and each position can have its own count (up to 12 tiers). "Split" halves a tier, "merge &uarr;" removes a break, and dragging a player across a break re-tiers him without moving anyone else. Sold players stay counted in their tier, so headers show what's left live — and the advisor warns you when a player is the last of his tier. Tiers ride sync and Export/Import like everything else. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>My Plan</b> (tab above the board) is the what-if roster: 16 slots in the league's real lineup shape, three plans to compare, prices you can push around freely without touching your board values, and two one-click fills &mdash; balanced, or best-available-until-the-money-runs-out. It reconciles live: players you win lock in at what you paid, players you planned who go elsewhere drop into the Gone strip with the price they fetched. Compare plans on <b>surplus</b> &mdash; Worth bought minus dollars spent. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
 
 </div>
 
@@ -882,8 +1076,8 @@ function renderTeams() {
         + '<button type="button" class="tb-ok manual-ok" data-rid="'+rid+'" title="save">&check;</button>'
         + '<button type="button" class="tb-cancel manual-cancel" data-rid="'+rid+'" title="cancel">&times;</button></span>';
     } else {
-      html += '<span class="tm"><b>$'+rem+'</b> left &middot; '+ct+'/'+ROUNDS+'</span>'
-        + '<span class="tm">max bid $'+Math.max(maxBid,0)+(bud !== BUDGET ? ' &middot; <span class="tb-note">budget $'+bud+'</span>' : '')+'</span>';
+      html += '<span class="tline"><b>$'+rem+'</b> left &middot; '+ct+'/'+ROUNDS+' &middot; max $'+Math.max(maxBid,0)
+        + (bud !== BUDGET ? ' &middot; <span class="tb-note">bud $'+bud+'</span>' : '')+'</span>';
     }
     html += '<span class="bar"><i style="width:'+Math.min(100,Math.max(0,(sp/bud))*100)+'%"></i></span></div>';
   });
@@ -966,7 +1160,7 @@ function renderBoard() {
     var statusVal = o.status || "";
     var rankShown = canDrag ? (rp[i]+1) : (k+1);
     return '<tr class="'+(s?"sold":"mysort")+'" data-row-idx="'+i+'">'
-      + '<td class="grip-cell"><span class="grip'+(canDrag?'':' off')+'" title="'+(canDrag?'drag to reorder':'switch Sort to &quot;My rank&quot; to reorder')+'">&#x283F;</span></td>'
+      + '<td class="grip-cell"><span class="grip'+(canDrag?'':' off')+'" title="'+(canDrag?'drag to reorder':'switch Sort to &quot;My rank&quot; to reorder')+'">&#x283F;</span>'+planAddBtnHtml(i, s)+'</td>'
       + '<td class="r-rank">'+rankShown+'</td>'
       + '<td class="r-name">'+d[0]+(edited?'<span class="edited-mark" title="edited">&#9679;</span>':'')+'</td>'
       + '<td><span class="pos '+d[1]+'">'+(d[1]==="DEF"?"D/ST":d[1])+'</span></td>'
@@ -1057,7 +1251,7 @@ function renderLog() {
   el.innerHTML = lines.join("");
 }
 
-function renderAll(){ computeInflation(); computeWarState(); renderInflation(); renderTeams(); renderBoard(); renderLog(); populateMyTeam(); updateAdvisor(); }
+function renderAll(){ computeInflation(); computeWarState(); renderInflation(); renderTeams(); renderBoard(); renderPlan(); renderLog(); populateMyTeam(); updateAdvisor(); }
 
 function pollRenderAll(){
   computeInflation();
@@ -1074,6 +1268,7 @@ function pollRenderAll(){
   } else {
     renderBoard();
   }
+  renderPlan();          // skips its own re-render while a plan field is focused / mid-drag
   renderLog();
   populateMyTeam();
   updateAdvisor();       // rewrites verdict/cards only, never the bid input
@@ -1155,6 +1350,24 @@ teamsEl.addEventListener("keydown", function(ev){
   if (ev.key === "Enter") { tbSave(ev.target.getAttribute("data-rid")); }
   if (ev.key === "Escape") { ev.target.blur(); tbOpenRid = null; renderTeams(); }
 });
+
+/* ---------- team-card collapse ---------- */
+(function(){
+  var collapsed = false;
+  try { collapsed = localStorage.getItem("ks26_teamcollapse_v1") === "1"; } catch(e){}
+  var grid = document.getElementById("teams"), btn = document.getElementById("teams-toggle");
+  function apply(){
+    grid.classList.toggle("collapsed", collapsed);
+    btn.textContent = collapsed ? "show" : "hide";
+    btn.setAttribute("aria-expanded", String(!collapsed));
+  }
+  apply();
+  btn.addEventListener("click", function(){
+    collapsed = !collapsed;
+    try { localStorage.setItem("ks26_teamcollapse_v1", collapsed ? "1" : "0"); } catch(e){}
+    apply();
+  });
+})();
 
 /* ---------- player search ---------- */
 var psBtn = document.getElementById("psearch-btn");
@@ -1240,6 +1453,15 @@ rowsEl.addEventListener("click", function(ev){
   var btn = ev.target.closest("button"); if (!btn) return;
   var i = btn.getAttribute("data-idx");
 
+  if (btn.classList.contains("plan-add")) {
+    var pi = Number(i);
+    if (inPlan(pi)) planRemove(pi); else planAdd(pi);
+    btn.classList.toggle("inplan", inPlan(pi));
+    btn.innerHTML = inPlan(pi) ? "&#10003;" : "+";
+    btn.title = inPlan(pi) ? "in My Plan — click to remove" : "add to My Plan";
+    renderPlan();
+    return;
+  }
   if (btn.classList.contains("tier-start")) {
     var ordS = posOrderOf(posFilter);
     if (posFilter !== "ALL" && ordS.length >= 2) {
@@ -1491,6 +1713,756 @@ rowsEl.addEventListener("click", function(ev){
   openAdvisor(ki);
 });
 
+/* ---------- My Plan: roster simulation ----------
+   A plan is a set of HYPOTHETICAL buys: {DATA index: {p: price, s: preferred slot}}.
+   It never writes to OV — plan prices are what-ifs, your board's Worth/Going stay clean.
+   What you render is always (players you actually won) + (hypotheticals not yet sold),
+   laid into the league's real roster_positions by a max-matching assignment, so a plan
+   can't quietly hold an illegal roster. Players you planned who sold to someone else
+   fall out into the "gone" strip with what they went for.
+   Storage ks26_plan_v1; synced whole-object at /plan; rides Export/Import. */
+var SLOTS = ["QB","RB","RB","WR","WR","WR","TE","FLEX","FLEX","SUPER_FLEX","DEF","BN","BN","BN","BN","BN"];
+var ELIG = {
+  QB:["QB"], RB:["RB"], WR:["WR"], TE:["TE"], DEF:["DEF"], K:["K"],
+  FLEX:["RB","WR","TE"], WRRB_FLEX:["RB","WR"], REC_FLEX:["WR","TE"],
+  SUPER_FLEX:["QB","RB","WR","TE"], BN:["QB","RB","WR","TE","DEF"]
+};
+function eligOf(s){ return ELIG[s] || ELIG.BN; }
+function canPlay(slot, pos){ return eligOf(slot).indexOf(pos) !== -1; }
+function isBench(slot){ return slot === "BN"; }
+function slotLabel(s){
+  return s === "SUPER_FLEX" ? "SFLEX" : (s === "DEF" ? "D/ST" : (s === "BN" ? "Bench" : s));
+}
+/* real lineup shape from Sleeper; only adopted when it still totals ROUNDS so the
+   $1-per-empty-slot budget math can't drift out of sync with the slot list */
+function loadRosterShape(){
+  return fetchJSON("https://api.sleeper.app/v1/league/" + LEAGUE_ID).then(function(l){
+    var rp = l && l.roster_positions;
+    if (!Array.isArray(rp)) return;
+    var keep = rp.filter(function(s){ return s !== "IR" && s !== "TAXI"; });
+    if (keep.length === ROUNDS) SLOTS = keep;
+  }).catch(function(){});
+}
+
+var PLAN_IDS = ["A","B","C"];
+var PLANS = loadJSON("ks26_plan_v1", null);
+function sanitizePk(pk){
+  var out = {};
+  if (!pk || typeof pk !== "object" || Array.isArray(pk)) return out;
+  Object.keys(pk).forEach(function(k){
+    var i = Math.round(Number(k));
+    if (!isFinite(i) || i < 0 || i >= DATA.length) return;
+    var e = pk[k];
+    if (!e || typeof e !== "object") return;
+    var p = Math.round(Number(e.p));
+    if (!isFinite(p) || p < 1) p = 1;
+    if (p > 400) p = 400;
+    out[i] = { p:p };
+  });
+  return out;
+}
+/* Slot pins = the ONLY thing that overrides the natural lineup order, and only
+   you create them (a drag, or the start/bench button). Autofill deliberately
+   pins nothing, so a better player added later still takes the starting job. */
+function sanitizePin(pin, legacyPk){
+  var out = {};
+  function put(k, v){
+    var i = Math.round(Number(k));
+    if (!isFinite(i) || i < 0 || i >= DATA.length) return;
+    var s = Math.round(Number(v));
+    if (!isFinite(s) || s < 0 || s >= 64) return;
+    out[i] = s;
+  }
+  if (legacyPk && typeof legacyPk === "object") {           // pins used to live on pk[i].s
+    Object.keys(legacyPk).forEach(function(k){
+      var e = legacyPk[k];
+      if (e && typeof e === "object" && e.s !== undefined && Number(e.s) >= 0) put(k, e.s);
+    });
+  }
+  if (pin && typeof pin === "object" && !Array.isArray(pin)) {
+    Object.keys(pin).forEach(function(k){ put(k, pin[k]); });
+  }
+  return out;
+}
+function sanitizePlans(obj){
+  var src = (obj && typeof obj === "object" && obj.p && typeof obj.p === "object") ? obj : {p:{}};
+  var out = { cur: PLAN_IDS.indexOf(src.cur) !== -1 ? src.cur : "A", p:{} };
+  PLAN_IDS.forEach(function(id){
+    var pl = src.p[id];
+    if (!pl || typeof pl !== "object") pl = {};
+    out.p[id] = {
+      name: (typeof pl.name === "string" && pl.name.trim()) ? pl.name.trim().slice(0,22) : ("Plan " + id),
+      pk: sanitizePk(pl.pk),
+      pin: sanitizePin(pl.pin, pl.pk)
+    };
+  });
+  return out;
+}
+PLANS = sanitizePlans(PLANS);
+function curPlan(){ return PLANS.p[PLANS.cur]; }
+function savePlans(){ try { localStorage.setItem("ks26_plan_v1", JSON.stringify(PLANS)); } catch(e){} }
+function pushPlans(){ savePlans(); syncPush("/plan", PLANS); }
+function inPlan(i){ return !!curPlan().pk[i]; }
+
+var planView = false, planDragging = false, planDragIdx = null, planSearchSlot = -1;
+var planSaveTimer = null;
+function pushPlansSoon(){ clearTimeout(planSaveTimer); planSaveTimer = setTimeout(pushPlans, 400); }
+
+function playerKey(p){ return p.i >= 0 ? ("i" + p.i) : ("n" + p.name); }
+
+function myWins(){
+  var out = [];
+  effectivePicks.forEach(function(p, seq){
+    if (String(p.roster_id) !== String(MYTEAM)) return;
+    var md = p.metadata || {};
+    var nm = ((md.first_name||"") + " " + (md.last_name||"")).trim();
+    var i = IDX[norm(nm)];
+    if (i === undefined) i = -1;
+    out.push({
+      i:i, name:nm, pos: i >= 0 ? DATA[i][1] : (md.position || "BN"),
+      price: parseInt(md.amount,10) || 0, won:true, keeper: !!p.is_keeper, seq:seq
+    });
+  });
+  return out;
+}
+
+/* Who starts: your My-rank order, wins and hypotheticals in one list. The best
+   man at a position takes the starting job and the sixth WR lands on the bench,
+   whether you won him or only planned him — pick order can't do that job because
+   a planned player has never been picked. Off-board buys sort last, by pick.
+   The only override is a pin you set yourself. */
+/* Each man, best first, claims the most SPECIALIST slot he fits: a WR takes a WR job
+   before a FLEX, a FLEX before the SUPERFLEX, and only then the bench. This league's
+   eligibility sets nest (WR in FLEX in SFLEX in BN), so plain greedy in rank order is
+   already a maximum assignment — and unlike a matching algorithm it never shuffles a
+   man who's already seated, which is what buried the best WR in the SUPERFLEX. */
+function augmentInto(p, order, slots, seen){
+  for (var q = 0; q < order.length; q++) {
+    var sx = order[q];
+    if (seen[sx] || !canPlay(slots[sx].slot, p.pos)) continue;
+    seen[sx] = 1;
+    var cur = slots[sx].e;
+    if (!cur) { slots[sx].e = p; return true; }
+    slots[sx].e = null;
+    if (augmentInto(cur, order, slots, seen)) { slots[sx].e = p; return true; }
+    slots[sx].e = cur;
+  }
+  return false;
+}
+function assignInto(players, slots, freeIx){
+  var order = freeIx.slice().sort(function(a,b){
+    return eligOf(slots[a].slot).length - eligOf(slots[b].slot).length || a - b;
+  });
+  var left = [];
+  players.forEach(function(p){
+    for (var q = 0; q < order.length; q++) {
+      var sx = order[q];
+      if (slots[sx].e || !canPlay(slots[sx].slot, p.pos)) continue;
+      slots[sx].e = p;
+      return;
+    }
+    left.push(p);
+  });
+  // only rescues a non-nesting lineup shape, and only for men who'd otherwise have no
+  // slot at all — so it can never demote someone the greedy pass seated correctly
+  var rescued = {};
+  left.forEach(function(p, li){ if (augmentInto(p, order, slots, {})) rescued[li] = 1; });
+  return left.filter(function(_, li){ return !rescued[li]; });
+}
+
+/* wins + live hypotheticals, assigned to real slots by max bipartite matching so the
+   best legal arrangement is always shown (a stored preferred slot wins when it's legal) */
+function planCompose(planId){
+  var pl = PLANS.p[planId || PLANS.cur], pk = pl.pk;
+  var won = myWins();
+  var wonIdx = {};
+  won.forEach(function(w){ if (w.i >= 0) wonIdx[w.i] = 1; });
+
+  var hypo = [], gone = [];
+  Object.keys(pk).forEach(function(k){
+    var i = Number(k);
+    if (wonIdx[i]) return;                     // the real pick supersedes the plan entry
+    if (soldByIdx[i]) { gone.push({i:i, sold:soldByIdx[i]}); return; }
+    hypo.push({ i:i, name:DATA[i][0], pos:DATA[i][1], price:Math.max(1, pk[k].p), won:false });
+  });
+  var rp = rankPosMap();
+  function prio(p){ return p.i >= 0 ? rp[p.i] : (1e6 + (p.seq || 0)); }
+  hypo.sort(function(a,b){ return prio(a) - prio(b); });
+  gone.sort(function(a,b){ return b.sold.seq - a.sold.seq; });
+
+  // the roster physically holds ROUNDS players: worst-ranked extras spill out rather
+  // than silently pushing a man you actually own off the sheet
+  var room = Math.max(ROUNDS - won.length, 0);
+  var overRoster = hypo.slice(room);
+  hypo = hypo.slice(0, room);
+
+  var all = won.concat(hypo).sort(function(a,b){ return prio(a) - prio(b); });
+  var slots = SLOTS.map(function(s, ix){ return {slot:s, ix:ix, e:null}; });
+  var pins = pl.pin || {};
+  var used = {};
+  all.forEach(function(p){                                   // your pins win over everything
+    if (p.i < 0) return;
+    var s = pins[p.i];
+    if (s === undefined || s < 0 || s >= slots.length) return;
+    if (!slots[s].e && canPlay(slots[s].slot, p.pos)) { slots[s].e = p; used[playerKey(p)] = 1; }
+  });
+  var rest = all.filter(function(p){ return !used[playerKey(p)]; });
+  var startFree = [], benchFree = [];
+  slots.forEach(function(s){ if (!s.e) (isBench(s.slot) ? benchFree : startFree).push(s.ix); });
+  rest = assignInto(rest, slots, startFree);                 // starting jobs go to the best men first
+  rest = assignInto(rest, slots, benchFree);
+  var overflow = rest.concat(overRoster);
+
+  var actualSpent = 0; won.forEach(function(w){ actualSpent += w.price; });
+  var hypoSum = 0;    hypo.forEach(function(h){ hypoSum += h.price; });
+  var filled = won.length + hypo.length;
+  var empty = Math.max(ROUNDS - filled, 0);
+  var bud = budgetFor(MYTEAM);
+  var left = bud - actualSpent - hypoSum;
+  var worthAll = 0, worthStart = 0;
+  function wOf(e){ return e.i >= 0 ? effWorth(e.i) : e.price; }
+  slots.forEach(function(s){
+    if (!s.e) return;
+    worthAll += wOf(s.e);
+    if (!isBench(s.slot)) worthStart += wOf(s.e);
+  });
+  overflow.forEach(function(p){ worthAll += wOf(p); });
+  return {
+    slots:slots, won:won, hypo:hypo, gone:gone, overflow:overflow,
+    actualSpent:actualSpent, hypoSum:hypoSum, spent:actualSpent + hypoSum,
+    filled:filled, empty:empty, left:left, budget:bud,
+    fits: left >= empty, short: Math.max(empty - left, 0),
+    maxNext: empty > 0 ? left - (empty - 1) : 0,
+    worthAll:worthAll, worthStart:worthStart, surplus: worthAll - (actualSpent + hypoSum)
+  };
+}
+
+function defaultPriceFor(i){ return isWar(i) ? recMaxFor(i).v : adjVal(i); }
+function planAdd(i, price, slotIx){
+  if (soldByIdx[i]) return false;
+  var pl = curPlan();
+  if (pl.pk[i]) return false;
+  pl.pk[i] = { p: Math.max(1, Math.round(price === undefined ? defaultPriceFor(i) : price)) };
+  if (slotIx !== undefined && slotIx !== null && slotIx >= 0) pl.pin[i] = slotIx;
+  pushPlans();
+  return true;
+}
+function planRemove(i){
+  var pl = curPlan();
+  if (!pl.pk[i]) return false;
+  delete pl.pk[i];
+  delete pl.pin[i];
+  pushPlans();
+  return true;
+}
+/* one-click start <-> bench: take a free slot on the other side, else swap with the
+   worst-ranked man over there who can legally cover the slot being vacated */
+function planToggleStart(i){
+  var c = planCompose(), mine = null;
+  c.slots.forEach(function(s){ if (s.e && s.e.i === i) mine = s; });
+  if (!mine) return false;
+  var toBench = !isBench(mine.slot);
+  var pins = curPlan().pin, pos = DATA[i][1];
+  var free = c.slots.filter(function(s){
+    return !s.e && isBench(s.slot) === toBench && canPlay(s.slot, pos);
+  });
+  if (free.length) { pins[i] = free[0].ix; pushPlans(); return true; }
+  var rp = rankPosMap();
+  var swap = c.slots.filter(function(s){
+    return s.e && s.e.i >= 0 && s.e.i !== i && isBench(s.slot) === toBench
+        && canPlay(s.slot, pos) && canPlay(mine.slot, s.e.pos);
+  }).sort(function(a,b){ return rp[b.e.i] - rp[a.e.i]; });
+  if (!swap.length) return false;
+  pins[i] = swap[0].ix;
+  pins[swap[0].e.i] = mine.ix;
+  pushPlans();
+  return true;
+}
+function planAddBtnHtml(i, s){
+  if (s) {
+    var mine = String(s.team || "") === String(teamName[MYTEAM] || " ");
+    return '<span class="plan-add off" title="' + (mine ? "on your roster" : "sold") + '">' + (mine ? "&#10003;" : "+") + '</span>';
+  }
+  var on = inPlan(i);
+  return '<button type="button" class="plan-add' + (on ? ' inplan' : '') + '" data-idx="' + i + '" title="'
+    + (on ? 'in My Plan — click to remove' : 'add to My Plan') + '">' + (on ? '&#10003;' : '+') + '</button>';
+}
+
+/* ---------- autofill ---------- */
+/* a fill shouldn't stack six $1 tight ends on the bench just because they sort high:
+   skip positions already at NEED_FULL, and only ignore that when nothing else fits */
+function posCountOf(c){
+  var t = {QB:0,RB:0,WR:0,TE:0,DEF:0};
+  c.slots.forEach(function(s){ if (s.e && t[s.e.pos] !== undefined) t[s.e.pos]++; });
+  c.overflow.forEach(function(p){ if (t[p.pos] !== undefined) t[p.pos]++; });
+  return t;
+}
+function saturated(pos, pc){ return !!pc && NEED_FULL[pos] !== undefined && (pc[pos] || 0) >= NEED_FULL[pos]; }
+function bestAvailFor(slotName, envelope, taken, pc){
+  for (var pass = 0; pass < 2; pass++) {
+    var limit = pass === 0 ? pc : null;
+    for (var q = 0; q < RANK.length; q++) {
+      var i = RANK[q];
+      if (soldByIdx[i] || taken[i]) continue;
+      if (!canPlay(slotName, DATA[i][1])) continue;
+      if (saturated(DATA[i][1], limit)) continue;
+      if (adjVal(i) <= envelope) return i;
+    }
+    if (!pc) break;
+  }
+  return -1;
+}
+function cheapestAvailFor(slotName, taken, pc){
+  for (var pass = 0; pass < 2; pass++) {
+    var limit = pass === 0 ? pc : null;
+    var bi = -1, bv = Infinity;
+    for (var q = 0; q < RANK.length; q++) {
+      var i = RANK[q];
+      if (soldByIdx[i] || taken[i]) continue;
+      if (!canPlay(slotName, DATA[i][1])) continue;
+      if (saturated(DATA[i][1], limit)) continue;
+      var v = adjVal(i);
+      if (v < bv) { bv = v; bi = i; }          // rank-order scan: ties keep the better-ranked guy
+    }
+    if (bi >= 0 || !pc) return bi;
+  }
+  return -1;
+}
+function takenMap(c){
+  var t = {};
+  Object.keys(curPlan().pk).forEach(function(k){ t[Number(k)] = 1; });
+  c.won.forEach(function(w){ if (w.i >= 0) t[w.i] = 1; });
+  return t;
+}
+/* "best": walk your rank from the top and buy until the money runs out (stars & scrubs).
+   "bal":  split what's left across the empty slots weighted by what each slot's best
+           available man costs — bench weighted at $1, so leftover cash flows to starters.
+   Both always keep $1 per still-empty slot, so a fill can never bust the roster. */
+function planAutofill(mode){
+  var guard = 0;
+  while (guard++ < 80) {
+    var c = planCompose();
+    if (c.filled >= ROUNDS) break;
+    var empties = c.slots.filter(function(s){ return !s.e; });
+    if (!empties.length || c.left < 1) break;
+    var n = empties.length;
+    var cap = c.left - (n - 1);                 // most we can spend here and still fill the rest at $1
+    if (cap < 1) break;
+    var taken = takenMap(c);
+    var pc = posCountOf(c);
+    var pick = -1, target = null;
+
+    if (mode === "best") {
+      for (var pass = 0; pass < 2 && pick < 0; pass++) {
+        var limit = pass === 0 ? pc : null;
+        for (var q = 0; q < RANK.length && pick < 0; q++) {
+          var i = RANK[q];
+          if (soldByIdx[i] || taken[i]) continue;
+          if (saturated(DATA[i][1], limit)) continue;
+          if (adjVal(i) > cap) continue;
+          var cand = empties.filter(function(s){ return canPlay(s.slot, DATA[i][1]); });
+          if (!cand.length) continue;
+          cand.sort(function(a,b){ return eligOf(a.slot).length - eligOf(b.slot).length || a.ix - b.ix; });
+          pick = i; target = cand[0];
+        }
+      }
+    } else {
+      var disc = c.left - n;
+      if (disc < 0) break;
+      var ws = empties.map(function(s){
+        if (isBench(s.slot)) return {s:s, w:1};
+        var t = bestAvailFor(s.slot, Infinity, taken, pc);
+        return {s:s, w: t >= 0 ? Math.max(adjVal(t), 1) : 1};
+      });
+      var tot = 0;
+      ws.forEach(function(o){ tot += o.w; });
+      ws.sort(function(a,b){ return b.w - a.w || a.s.ix - b.s.ix; });   // priciest slot first, leftovers cascade down
+      var top = ws[0];
+      var env = Math.min(1 + (tot > 0 ? Math.round(disc * top.w / tot) : 0), cap);
+      pick = bestAvailFor(top.s.slot, env, taken, pc);
+      if (pick < 0) pick = cheapestAvailFor(top.s.slot, taken, pc);
+      if (pick >= 0 && adjVal(pick) > cap) pick = -1;
+      target = top.s;
+    }
+    if (pick < 0 || !target) break;
+    // no pin: the lineup sorts itself by rank, so a better man added later still starts
+    curPlan().pk[pick] = { p: Math.max(1, Math.min(adjVal(pick), cap)) };
+  }
+  pushPlans();
+  renderPlan();
+  renderBoard();
+}
+
+/* ---------- plan rendering ---------- */
+function planStripHtml(c){
+  var h = '<span><span class="lbl">committed</span> <b>$' + c.spent + '</b></span>'
+    + '<span><span class="lbl">left</span> <b>$' + c.left + '</b></span>'
+    + '<span><span class="lbl">open slots</span> <b>' + c.empty + '</b></span>'
+    + (c.empty > 0
+        ? '<span><span class="lbl">max on the next guy</span> <b>$' + Math.max(c.maxNext, 0) + '</b></span>'
+        : '<span class="lbl">roster full</span>');
+  h += c.fits
+    ? '<span class="ok">&#10003; fits</span>'
+    : '<span class="bad">&#10007; $' + c.short + ' short &mdash; ' + c.empty + ' slots still need $1 each</span>';
+  h += '<span><span class="lbl">worth bought</span> <b>$' + c.worthAll + '</b>'
+    + ' <span class="lbl">(starters $' + c.worthStart + ')</span></span>'
+    + '<span><span class="lbl">surplus</span> <span class="' + (c.surplus >= 0 ? 'surplus-up' : 'surplus-down') + '">'
+    + (c.surplus >= 0 ? '+' : '') + '$' + c.surplus + '</span></span>';
+  if (c.overflow.length) {
+    h += '<span class="bad">' + c.overflow.length + ' with no legal slot</span>';
+  }
+  return h;
+}
+function slotRowHtml(s){
+  var e = s.e;
+  var lbl = '<span class="slabel">' + slotLabel(s.slot) + '</span>';
+  if (!e) {
+    return '<div class="pslot empty" data-slot="' + s.ix + '"><span class="sgrip off">&#x283F;</span>' + lbl
+      + '<span class="sname" data-fill="' + s.ix + '">empty &mdash; click to fill</span>'
+      + '<span class="sworth"></span><span class="slock">&mdash;</span>'
+      + '<span class="sswap" style="visibility:hidden">&nbsp;</span><span class="sx" style="visibility:hidden">&times;</span></div>';
+  }
+  var nm = e.i >= 0 ? DATA[e.i][0] : e.name;
+  var bye = e.i >= 0 ? DATA[e.i][3] : "";
+  var w = e.i >= 0 ? effWorth(e.i) : e.price;
+  var tag = e.won ? '<span class="stag lock">' + (e.keeper ? 'KEEPER' : 'WON') + '</span>'
+          : (e.i >= 0 && isWar(e.i) ? '<span class="stag war">WAR</span>' : '');
+  var priceCell = e.won
+    ? '<span class="slock" title="what you actually paid">$' + e.price + '</span>'
+    : '<input type="number" class="sprice" data-idx="' + e.i + '" min="1" value="' + e.price
+      + '" title="what you think he goes for — plan only, never touches your board values">';
+  var pinned = e.i >= 0 && curPlan().pin[e.i] !== undefined;
+  var swap = e.i >= 0
+    ? '<button type="button" class="sswap' + (pinned ? ' pinned' : '') + '" data-swap="' + e.i + '" title="'
+      + (isBench(s.slot) ? 'move into the starting lineup' : 'move to the bench')
+      + (pinned ? ' — pinned here by you' : '') + '">' + (isBench(s.slot) ? '&#8593;' : '&#8595;') + '</button>'
+    : '<span class="sswap" style="visibility:hidden">&nbsp;</span>';
+  var x = e.won
+    ? '<span class="sx" style="visibility:hidden">&times;</span>'
+    : '<button type="button" class="sx" data-drop="' + e.i + '" title="remove from plan">&times;</button>';
+  return '<div class="pslot" data-slot="' + s.ix + '"' + (e.i >= 0 ? ' data-pidx="' + e.i + '"' : '') + '>'
+    + '<span class="sgrip" title="drag to another slot">&#x283F;</span>'
+    + lbl
+    + '<span class="sname">' + nm + (bye ? '<span class="sbye">bye ' + bye + '</span>' : '') + ' ' + tag + '</span>'
+    + '<span class="sworth">w $' + w + '</span>'
+    + priceCell + swap + x + '</div>';
+}
+function renderPlanSlots(c){
+  var st = "", bn = "", stS = 0, bnS = 0, stN = 0, bnN = 0;
+  c.slots.forEach(function(s){
+    var row = slotRowHtml(s);
+    var v = s.e ? s.e.price : 0;
+    if (isBench(s.slot)) { bn += row; bnS += v; if (s.e) bnN++; }
+    else { st += row; stS += v; if (s.e) stN++; }
+  });
+  c.overflow.forEach(function(p){
+    bn += '<div class="pslot"><span class="sgrip off">&#x283F;</span>'
+      + '<span class="slabel" style="color:var(--fade)">no room</span>'
+      + '<span class="sname">' + (p.i >= 0 ? DATA[p.i][0] : p.name) + '</span>'
+      + '<span class="sworth">' + p.pos + '</span>'
+      + (p.won ? '<span class="slock">$' + p.price + '</span>'
+               : '<input type="number" class="sprice" data-idx="' + p.i + '" min="1" value="' + p.price + '">')
+      + '<span class="sswap" style="visibility:hidden">&nbsp;</span>'
+      + (p.won ? '<span class="sx" style="visibility:hidden">&times;</span>'
+               : '<button type="button" class="sx" data-drop="' + p.i + '" title="remove from plan">&times;</button>')
+      + '</div>';
+    bnS += p.price;
+  });
+  document.getElementById("plan-starters").innerHTML = st;
+  document.getElementById("plan-bench").innerHTML = bn;
+  document.getElementById("start-sum").textContent = stN + " of " + c.slots.filter(function(s){ return !isBench(s.slot); }).length + " · $" + stS;
+  document.getElementById("bench-sum").textContent = bnN + " of " + c.slots.filter(function(s){ return isBench(s.slot); }).length + " · $" + bnS;
+}
+function renderPlanGone(c){
+  var el = document.getElementById("plan-gone");
+  if (!c.gone.length) { el.innerHTML = ""; return; }
+  var h = '<div class="plan-gone"><div class="gline" style="font-weight:700;color:var(--fade)">Gone &mdash; planned, sold to someone else</div>';
+  c.gone.forEach(function(g){
+    var s = g.sold;
+    h += '<div class="gline"><span class="gname">' + DATA[g.i][0] + '</span>'
+      + '<span>$' + s.amount + ' &rarr; ' + s.team + '</span>'
+      + '<span style="color:var(--muted)">you had him at $' + curPlan().pk[g.i].p + '</span>'
+      + '<button type="button" class="gbtn" data-repl="' + g.i + '">replace</button>'
+      + '<button type="button" class="gbtn" data-drop="' + g.i + '">drop</button></div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
+}
+function renderPlanChips(){
+  var h = "";
+  PLAN_IDS.forEach(function(id){
+    h += '<button type="button" class="plan-chip" data-plan="' + id + '" aria-pressed="' + (id === PLANS.cur) + '">'
+      + escapeAttr(PLANS.p[id].name) + '</button>';
+  });
+  document.getElementById("plan-chips").innerHTML = h;
+  var nameEl = document.getElementById("plan-name");
+  if (document.activeElement !== nameEl) nameEl.value = curPlan().name;
+}
+function renderPlanCompare(){
+  var h = "";
+  PLAN_IDS.forEach(function(id){
+    var c = planCompose(id);
+    h += '<div class="pc' + (id === PLANS.cur ? ' on' : '') + '" data-plan="' + id + '">'
+      + '<div class="pcn">' + escapeAttr(PLANS.p[id].name) + '</div>'
+      + '$' + c.spent + ' spent &middot; ' + c.filled + '/' + ROUNDS + '<br>'
+      + 'worth $' + c.worthAll + ' &middot; starters $' + c.worthStart + '<br>'
+      + 'surplus <span class="' + (c.surplus >= 0 ? 'surplus-up' : 'surplus-down') + '">' + (c.surplus >= 0 ? '+' : '') + '$' + c.surplus + '</span>'
+      + (c.fits ? '' : ' &middot; <span class="pcbad">$' + c.short + ' short</span>')
+      + '</div>';
+  });
+  document.getElementById("plan-compare").innerHTML = h;
+}
+function renderPlan(){
+  var c = planCompose();
+  var vc = document.getElementById("vt-count");
+  if (vc) vc.textContent = c.filled ? (c.filled + "/" + ROUNDS) : "";
+  if (!planView) return;
+  document.getElementById("plan-strip").innerHTML = planStripHtml(c);
+  renderPlanChips();
+  renderPlanCompare();
+  var ae = document.activeElement;
+  var busy = planDragging || (ae && (ae.id === "plan-search" || ae.id === "plan-name"
+             || (ae.classList && ae.classList.contains("sprice"))));
+  if (busy) return;                      // never clobber a field being typed in
+  renderPlanSlots(c);
+  renderPlanGone(c);
+}
+
+/* ---------- plan view wiring ---------- */
+document.getElementById("viewtabs").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if (!b) return;
+  planView = b.getAttribute("data-view") === "plan";
+  this.querySelectorAll("button").forEach(function(o){ o.setAttribute("aria-pressed", String(o === b)); });
+  // the board stays put in both views — you can't build a plan without seeing the players,
+  // and the filter chips (Target / Bid War / position) are half of how you find them
+  document.getElementById("planview").hidden = !planView;
+  if (planView) renderPlan();
+});
+
+var planEl = document.getElementById("planview");
+
+planEl.addEventListener("click", function(ev){
+  var t = ev.target;
+  var fill = t.closest("[data-fill]");
+  if (fill) {
+    planSearchSlot = Number(fill.getAttribute("data-fill"));
+    var ps = document.getElementById("plan-search");
+    ps.focus();
+    planRenderResults();
+    return;
+  }
+  var b = t.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-swap")) {
+    planToggleStart(Number(b.getAttribute("data-swap")));
+    renderPlan();
+    return;
+  }
+  if (b.id === "lineup-reset") {
+    curPlan().pin = {};
+    pushPlans();
+    renderPlan();
+    return;
+  }
+  if (b.hasAttribute("data-drop")) {
+    planRemove(Number(b.getAttribute("data-drop")));
+    renderPlan(); renderBoard();
+    return;
+  }
+  if (b.hasAttribute("data-repl")) {
+    var gi = Number(b.getAttribute("data-repl"));
+    var P = DATA[gi][1];
+    planRemove(gi);
+    var c = planCompose();
+    var slot = null;
+    for (var q = 0; q < c.slots.length; q++) {
+      if (!c.slots[q].e && canPlay(c.slots[q].slot, P)) { slot = c.slots[q]; break; }
+    }
+    var cap = c.empty > 0 ? c.left - (c.empty - 1) : 0;
+    var rep = bestAvailFor(P, Math.max(cap, 1), takenMap(c), posCountOf(c));
+    if (rep >= 0) planAdd(rep, Math.min(adjVal(rep), Math.max(cap, 1)), slot ? slot.ix : -1);
+    renderPlan(); renderBoard();
+    return;
+  }
+  if (b.hasAttribute("data-plan")) {
+    PLANS.cur = b.getAttribute("data-plan");
+    pushPlans();
+    renderPlan(); renderBoard();
+    return;
+  }
+  if (b.id === "plan-help-btn") {
+    var hp = document.getElementById("plan-help");
+    hp.hidden = !hp.hidden;
+    b.setAttribute("aria-expanded", String(!hp.hidden));
+    b.textContent = hp.hidden ? "how this works" : "hide";
+    return;
+  }
+  if (b.id === "fill-bal") { planAutofill("bal"); return; }
+  if (b.id === "fill-best") { planAutofill("best"); return; }
+  if (b.id === "plan-clear-empty") {
+    curPlan().pk = {};
+    pushPlans();
+    renderPlan(); renderBoard();
+    return;
+  }
+});
+planEl.addEventListener("click", function(ev){
+  var pc = ev.target.closest(".pc"); if (!pc) return;
+  PLANS.cur = pc.getAttribute("data-plan");
+  pushPlans();
+  renderPlan(); renderBoard();
+});
+
+planEl.addEventListener("input", function(ev){
+  var t = ev.target;
+  if (t.classList.contains("sprice")) {
+    var i = Number(t.getAttribute("data-idx"));
+    var v = Math.round(Number(t.value));
+    if (!isFinite(v) || v < 1) v = 1;
+    if (curPlan().pk[i]) {
+      curPlan().pk[i].p = v;
+      pushPlansSoon();
+      document.getElementById("plan-strip").innerHTML = planStripHtml(planCompose());
+      renderPlanCompare();
+    }
+    return;
+  }
+  if (t.id === "plan-name") {
+    var nm = t.value.trim().slice(0,22) || ("Plan " + PLANS.cur);
+    curPlan().name = nm;
+    pushPlansSoon();
+    renderPlanChips();
+    renderPlanCompare();
+    return;
+  }
+});
+planEl.addEventListener("focusout", function(ev){
+  var t = ev.target;
+  if (t.classList && t.classList.contains("sprice")) { clearTimeout(planSaveTimer); pushPlans(); renderPlan(); }
+  if (t.id === "plan-name") { clearTimeout(planSaveTimer); pushPlans(); }
+});
+// a debounced rename/reprice must never be lost to a tab close mid-keystroke
+window.addEventListener("beforeunload", function(){ clearTimeout(planSaveTimer); savePlans(); });
+
+/* plan-view player search — the way in when you're not on the Board tab */
+function planRenderResults(){
+  var box = document.getElementById("plan-results");
+  var q = document.getElementById("plan-search").value.trim().toLowerCase();
+  if (q.length < 2) { box.hidden = true; box.innerHTML = ""; return; }
+  var flat = q.replace(/[^a-z0-9]/g,"");
+  var hits = [];
+  for (var k = 0; k < RANK.length && hits.length < 24; k++) {
+    var i = RANK[k];
+    if (soldByIdx[i] || inPlan(i)) continue;
+    if (planSearchSlot >= 0 && planSearchSlot < SLOTS.length && !canPlay(SLOTS[planSearchSlot], DATA[i][1])) continue;
+    var nm = DATA[i][0].toLowerCase();
+    if (nm.indexOf(q) === -1 && nm.replace(/[^a-z0-9]/g,"").indexOf(flat) === -1) continue;
+    hits.push(i);
+  }
+  if (!hits.length) {
+    box.innerHTML = '<div class="pr-none">Nobody available by that name'
+      + (planSearchSlot >= 0 ? ' for ' + slotLabel(SLOTS[planSearchSlot]) : '') + '.</div>';
+    box.hidden = false;
+    return;
+  }
+  box.innerHTML = hits.map(function(i){
+    return '<button type="button" data-pick="' + i + '"><span class="pos ' + DATA[i][1] + '">'
+      + (DATA[i][1] === "DEF" ? "D/ST" : DATA[i][1]) + '</span>'
+      + '<span class="pr-name">' + DATA[i][0] + '</span>'
+      + '<span class="pr-cost">$' + defaultPriceFor(i) + '</span></button>';
+  }).join("");
+  box.hidden = false;
+}
+document.getElementById("plan-search").addEventListener("input", planRenderResults);
+document.getElementById("plan-search").addEventListener("keydown", function(ev){
+  if (ev.key === "Escape") { this.value = ""; planSearchSlot = -1; planRenderResults(); this.blur(); }
+  if (ev.key === "Enter") {
+    var first = document.querySelector("#plan-results button[data-pick]");
+    if (first) first.click();
+  }
+});
+document.getElementById("plan-results").addEventListener("click", function(ev){
+  var b = ev.target.closest("button[data-pick]"); if (!b) return;
+  var i = Number(b.getAttribute("data-pick"));
+  planAdd(i, undefined, planSearchSlot >= 0 ? planSearchSlot : undefined);
+  planSearchSlot = -1;
+  var ps = document.getElementById("plan-search");
+  ps.value = "";
+  planRenderResults();
+  renderPlan(); renderBoard();
+  ps.focus();
+});
+
+/* drag a planned player between slots (wins are pinned) */
+planEl.addEventListener("mousedown", function(ev){
+  var g = ev.target.closest(".sgrip");
+  if (!g || g.classList.contains("off")) return;
+  var row = g.closest(".pslot");
+  if (row && row.hasAttribute("data-pidx")) row.setAttribute("draggable","true");
+});
+planEl.addEventListener("mouseup", function(){
+  if (!planDragging) planEl.querySelectorAll('.pslot[draggable]').forEach(function(x){ x.removeAttribute("draggable"); });
+});
+planEl.addEventListener("dragstart", function(ev){
+  var row = ev.target.closest(".pslot");
+  if (!row || row.getAttribute("draggable") !== "true") { ev.preventDefault(); return; }
+  planDragIdx = Number(row.getAttribute("data-pidx"));
+  planDragging = true;
+  row.classList.add("dragging");
+  ev.dataTransfer.effectAllowed = "move";
+  try { ev.dataTransfer.setData("text/plain", String(planDragIdx)); } catch(e){}
+});
+planEl.addEventListener("dragover", function(ev){
+  if (planDragIdx === null) return;
+  var row = ev.target.closest(".pslot"); if (!row || !row.hasAttribute("data-slot")) return;
+  var sx = Number(row.getAttribute("data-slot"));
+  if (!canPlay(SLOTS[sx], DATA[planDragIdx][1])) return;      // illegal target: no drop
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = "move";
+  planEl.querySelectorAll(".drop-in").forEach(function(x){ x.classList.remove("drop-in"); });
+  row.classList.add("drop-in");
+});
+planEl.addEventListener("drop", function(ev){
+  if (planDragIdx === null) return;
+  ev.preventDefault();
+  var row = ev.target.closest(".pslot");
+  if (row && row.hasAttribute("data-slot")) {
+    var sx = Number(row.getAttribute("data-slot"));
+    if (canPlay(SLOTS[sx], DATA[planDragIdx][1])) {
+      var pins = curPlan().pin;
+      var occupant = row.getAttribute("data-pidx");
+      var fromIx = -1;
+      planCompose().slots.forEach(function(s){ if (s.e && s.e.i === planDragIdx) fromIx = s.ix; });
+      if (occupant !== null && Number(occupant) !== planDragIdx
+          && fromIx >= 0 && canPlay(SLOTS[fromIx], DATA[Number(occupant)][1])) {
+        pins[Number(occupant)] = fromIx;            // straight swap, both ends pinned
+      }
+      pins[planDragIdx] = sx;
+      pushPlans();
+    }
+  }
+  planEndDrag();
+});
+planEl.addEventListener("dragend", planEndDrag);
+function planEndDrag(){
+  planDragIdx = null; planDragging = false;
+  planEl.querySelectorAll('.pslot[draggable]').forEach(function(x){ x.removeAttribute("draggable"); x.classList.remove("dragging"); });
+  planEl.querySelectorAll(".drop-in").forEach(function(x){ x.classList.remove("drop-in"); });
+  renderPlan();
+}
+
+document.getElementById("plan-help").innerHTML =
+  'A plan is a what-if roster, and the board below is live in this view &mdash; filter it to Target or Bid War and hit <b>+</b> on any row to plan that man. '
+  + 'Prices here are <b>yours alone</b>: typing one never changes the board\'s Worth or Going For. A new man lands at his live <b>Adj</b> price '
+  + '(his Bid War max if he\'s tagged Bid War). <b>Who starts</b> follows My rank &mdash; your best man at a position takes the job, the sixth WR sits &mdash; '
+  + 'counting players you\'ve won and players you\'ve only planned as one list. Override it with the <b>&#8593;/&#8595;</b> button or by dragging a row onto '
+  + 'another slot; that pins him there (the button turns gold) until you hit <b>Reset lineup</b>. '
+  + '<b>Fill balanced</b> spreads what\'s left across the empty starting slots, weighting each by what its best available man costs and pricing the bench at a buck; '
+  + '<b>Fill best available</b> walks your rank from the top until the money runs out. Both keep $1 for every slot still empty, so a fill can\'t bust the roster, '
+  + 'and neither one pins anybody. <b>Surplus</b> = Worth you bought minus what you spent, which is the number to compare plans on. '
+  + 'Once the draft starts, players you actually win lock in at what you paid, and anyone you planned who goes to another team drops into the <b>Gone</b> strip '
+  + 'with the price he fetched &mdash; hit replace to pull the next man at that position into his slot. Slots come from the league\'s real lineup, so the plan '
+  + 'can\'t hold an illegal roster. All three plans sync with Or and ride Export/Import.';
+
 /* ---------- drag-to-rank wiring ---------- */
 function clearDropMarks(){
   rowsEl.querySelectorAll(".drop-above,.drop-below").forEach(function(x){ x.classList.remove("drop-above","drop-below"); });
@@ -1695,6 +2667,19 @@ function syncApply(remote){
       if (trOk && JSON.stringify(remote.tiers) !== JSON.stringify(TIERS)) { TIERS = remote.tiers; saveTiers(); changed = true; }
     }
   }
+  if (remote.plan) {
+    var planFocused = ae && (ae.id === "plan-search" || ae.id === "plan-name"
+                      || (ae.classList && ae.classList.contains("sprice")));
+    if (SYNC.pend["/plan"] || syncHeld("/plan") || planDragging || planFocused) { SYNC.deferred++; }
+    else {
+      var pOk = typeof remote.plan === "object" && !Array.isArray(remote.plan)
+                && remote.plan.p && typeof remote.plan.p === "object" && !Array.isArray(remote.plan.p);
+      if (pOk) {
+        var inc = sanitizePlans(remote.plan);
+        if (JSON.stringify(inc) !== JSON.stringify(PLANS)) { PLANS = inc; savePlans(); changed = true; }
+      }
+    }
+  }
   var rms = remote.ms || {}, msSeen = {};
   Object.keys(rms).forEach(function(k){
     msSeen[k] = 1;
@@ -1712,7 +2697,7 @@ function syncApply(remote){
 
 function syncSeed(){
   SYNC.seeded = true;
-  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, tiers:TIERS, n:DATA.length})})
+  syncFetch("", {method:"PUT", body:JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, tiers:TIERS, plan:PLANS, n:DATA.length})})
     .then(function(){ syncDot("on", "room created — the other manager pastes the same code"); })
     .catch(function(){ syncDot("err", "couldn't create sync room"); });
 }
@@ -1771,7 +2756,7 @@ function syncStop(){
       impForm = document.getElementById("imp-form"), impInp = document.getElementById("imp-input"),
       impOk = document.getElementById("imp-ok");
   expBtn.addEventListener("click", function(){
-    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, tiers:TIERS, n:DATA.length}))));
+    var code = "KS26:" + btoa(unescape(encodeURIComponent(JSON.stringify({ov:OV, rank:RANK, ms:MS, tb:TB, tiers:TIERS, plan:PLANS, n:DATA.length}))));
     function done(ok){ syncDot(SYNC.on ? "on" : "", ok ? "board code copied — paste it anywhere safe" : "copy blocked — see console"); if (!ok) console.log(code); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(code).then(function(){ done(true); }, function(){ done(false); });
@@ -1793,7 +2778,8 @@ function syncStop(){
       MS = obj.ms || {};
       if (obj.tb && typeof obj.tb === "object" && !Array.isArray(obj.tb)) TB = obj.tb;
       TIERS = (obj.tiers && typeof obj.tiers === "object" && !Array.isArray(obj.tiers)) ? obj.tiers : {};
-      saveOVNow(); saveRank(); saveMS(); saveTB(); saveTiers();
+      PLANS = sanitizePlans(obj.plan);   // an old pre-plan code clears plans, like every other whole-board key
+      saveOVNow(); saveRank(); saveMS(); saveTB(); saveTiers(); savePlans();
       applyPicks(picks); renderAll();
       if (SYNC.on) syncSeed();   // imported board becomes the shared board
       syncDot(SYNC.on ? "on" : "", "board loaded");
@@ -1803,7 +2789,7 @@ function syncStop(){
   if (SYNC.url) syncStart();   // reconnect automatically on every page load
 })();
 
-loadTeams().catch(function(){}).then(function(){
+Promise.all([loadTeams().catch(function(){}), loadRosterShape()]).then(function(){
   if (!Object.keys(teamName).length) {
     for (var rid in FALLBACK_TEAMS) teamName[rid] = FALLBACK_TEAMS[rid];
   }
