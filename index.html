@@ -472,6 +472,12 @@
   .stag.war { border:1px solid var(--war); color:var(--war); }
   .pslot.dragging { opacity:.35; }
 
+  #plan-empty .pe {
+    border:1px solid var(--brass); border-radius:3px; background:var(--brass-tint);
+    padding:9px 12px; font-size:13px; line-height:1.5; color:var(--ink-soft);
+  }
+  #plan-empty .pe b { color:var(--ink); }
+  #plan-empty .pe.calm { border-color:var(--line); background:var(--surface); color:var(--muted); }
   .plan-gone { border:1px solid var(--fade); border-radius:3px; background:var(--fade-tint); padding:7px 12px; font-size:12.5px; }
   .plan-gone .gline { font-family:ui-monospace,monospace; display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:2px 0; }
   .plan-gone .gname { font-family:ui-sans-serif,system-ui,sans-serif; font-weight:700; text-decoration:line-through; color:var(--fade); }
@@ -553,6 +559,7 @@
       <button type="button" class="plan-act" id="plan-clear-empty" title="Remove every planned player, keep the ones you've actually won">Clear plan</button>
     </div>
     <div class="plan-strip" id="plan-strip"></div>
+    <div id="plan-empty" hidden></div>
     <div id="plan-gone"></div>
     <div class="plan-cols">
       <div class="plan-group"><h3><span>Starters</span><span class="gsum" id="start-sum"></span></h3><div id="plan-starters"></div></div>
@@ -2254,6 +2261,33 @@ function renderPlanSlots(c){
   document.getElementById("start-sum").textContent = stN + " of " + c.slots.filter(function(s){ return !isBench(s.slot); }).length + " · $" + stS;
   document.getElementById("bench-sum").textContent = bnN + " of " + c.slots.filter(function(s){ return isBench(s.slot); }).length + " · $" + bnS;
 }
+/* An empty plan on a second device almost always means that device has never been
+   given the sync code — in which case it is missing the rank, tiers and tags too, which
+   matters far more than the plan. Say so here, where the confusion actually happens. */
+function renderPlanEmpty(c){
+  var el = document.getElementById("plan-empty");
+  var anyPlan = false;
+  PLAN_IDS.forEach(function(id){ if (Object.keys(PLANS.p[id].pk).length) anyPlan = true; });
+  if (anyPlan || c.filled > 0) { el.hidden = true; el.innerHTML = ""; return; }
+  var msg;
+  if (!SYNC.url) {
+    var defaultish = !Object.keys(TIERS).length;
+    msg = '<b>Nothing on this device yet.</b> Plans live in your shared board, not in the page &mdash; '
+      + 'so does your rank, your tiers and every Target / Bid War tag'
+      + (defaultish ? ' <b>(this browser is showing the default ranking and no tiers, so it has none of them)</b>' : '')
+      + '. Scroll to <b>Sync board</b> below, paste your sync code once, and everything appears in a few seconds. '
+      + 'Joining is safe &mdash; a new device adopts the shared board, it can never overwrite it.';
+  } else if (document.getElementById("sync-dot").className === "err") {
+    msg = '<b>Sync is offline right now</b>, so this device can\'t pull the shared plans. It keeps working '
+      + 'local-only; plans will appear when the connection comes back.';
+  } else {
+    msg = 'Empty plan. Add players with the <b>+</b> on any row of the board below, or hit '
+      + '<b>Fill balanced</b> to see what the money buys.';
+    return void (el.hidden = false, el.innerHTML = '<div class="pe calm">' + msg + '</div>');
+  }
+  el.hidden = false;
+  el.innerHTML = '<div class="pe">' + msg + '</div>';
+}
 function renderPlanGone(c){
   var el = document.getElementById("plan-gone");
   if (!c.gone.length) { el.innerHTML = ""; return; }
@@ -2299,6 +2333,7 @@ function renderPlan(){
   if (vc) vc.textContent = c.filled ? (c.filled + "/" + ROUNDS) : "";
   if (!planView) return;
   document.getElementById("plan-strip").innerHTML = planStripHtml(c);
+  renderPlanEmpty(c);
   renderPlanChips();
   renderPlanCompare();
   var ae = document.activeElement;
