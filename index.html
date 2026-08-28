@@ -324,6 +324,30 @@
   }
   .teams-head .mini:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
 
+  /* On a phone the room stacked one card per row and pushed the view tabs ~2000px
+     down the page, so the plan looked like it didn't exist. Two-up + collapsed by
+     default keeps the tabs above the fold. */
+  @media (max-width:700px) {
+    .wrap { padding:0 10px 48px; gap:14px; }
+    .teams { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
+    .team { padding:4px 7px; }
+    .team .tn { font-size:11px; }
+    .team .tline { font-size:10.5px; }
+    .team .bar { height:3px; }
+    .masthead { padding:14px 0 10px; }
+    .stamp { font-size:10.5px; line-height:1.5; }
+    .viewtabs { align-self:stretch; }
+    .viewtabs button { flex:1; padding:9px 8px; }
+    .plan-bar { gap:5px 8px; }
+    #plan-search { width:100%; }
+    .plan-search-wrap { flex:1 1 100%; }
+    .pslot { gap:5px; padding:6px 7px; font-size:12.5px; }
+    .pslot .slabel { min-width:42px; font-size:9.5px; }
+    .pslot .sworth { display:none; }          /* price is what you tune on a phone */
+    .pslot input.sprice { width:46px; }
+    .plan-strip { font-size:12px; gap:3px 12px; }
+  }
+
   /* --- view tabs: Board | My Plan --- */
   .viewtabs { display:flex; gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; align-self:flex-start; }
   .viewtabs button {
@@ -1353,8 +1377,13 @@ teamsEl.addEventListener("keydown", function(ev){
 
 /* ---------- team-card collapse ---------- */
 (function(){
-  var collapsed = false;
-  try { collapsed = localStorage.getItem("ks26_teamcollapse_v1") === "1"; } catch(e){}
+  // narrow screens start collapsed so the view tabs and the plan sit above the fold;
+  // once you touch the toggle your choice sticks on that device
+  var collapsed = window.innerWidth <= 700;
+  try {
+    var saved = localStorage.getItem("ks26_teamcollapse_v1");
+    if (saved === "1" || saved === "0") collapsed = (saved === "1");
+  } catch(e){}
   var grid = document.getElementById("teams"), btn = document.getElementById("teams-toggle");
   function apply(){
     grid.classList.toggle("collapsed", collapsed);
