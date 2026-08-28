@@ -304,6 +304,16 @@
   }
   .tier-btn:hover { color:var(--ink-soft); border-color:var(--ink-soft); }
   tr.tier-row.dragging td { opacity:.4; }
+  tr.tier-row .tier-steps { color:var(--buy); font-weight:700; margin-left:2px; }
+
+  /* --- value steps inside a tier --- */
+  .vstep {
+    display:inline-block; margin-left:6px; padding:0 5px; border-radius:2px;
+    font-family:ui-monospace,monospace; font-size:10.5px; font-weight:700;
+    background:var(--buy-tint); color:var(--buy); vertical-align:1px; cursor:help;
+    text-decoration:none;   /* sold rows strike the name, not the badge */
+  }
+  tr.vstep-row td.grip-cell { box-shadow:inset 3px 0 0 var(--buy); }
 
   /* --- compact team cards --- */
   .teams { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:5px; }
@@ -642,7 +652,7 @@
     </div>
   </div>
 
-  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. <b>Ashton Jeanty &amp; Mike Washington Jr. repriced by hand Aug 26:</b> the Aug 23 pull caught the hours when Jeanty's practice injury looked season-ending; the follow-up news (low ankle sprain, no structural damage, hopeful for Wk 1, full strength by Wk 2&ndash;3) puts him back at a ~top-10 pick &mdash; set to $30 going / $35 worth. Mike Washington Jr. stays at $1/$1 &mdash; handcuffs clear at a buck in this room, and his upside is conditional on owning Jeanty, which is a Notes/Sleeper call, not a board price. Re-check practice reports before Friday: if Jeanty is ruled out for Wk 1, shave him a few dollars and Washington becomes a real $2&ndash;3 stretch. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. <b>Tiers</b>: filter to a single position (Sort on "My rank") and hit "+ add tier break" to split that position into quality classes. Breaks are draggable dividers — a tier holds however many players you put between them, and each position can have its own count (up to 12 tiers). "Split" halves a tier, "merge &uarr;" removes a break, and dragging a player across a break re-tiers him without moving anyone else. Sold players stay counted in their tier, so headers show what's left live — and the advisor warns you when a player is the last of his tier. Tiers ride sync and Export/Import like everything else. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>My Plan</b> (tab above the board) is the what-if roster: 16 slots in the league's real lineup shape, three plans to compare, prices you can push around freely without touching your board values, and two one-click fills &mdash; balanced, or best-available-until-the-money-runs-out. It reconciles live: players you win lock in at what you paid, players you planned who go elsewhere drop into the Gone strip with the price they fetched. Compare plans on <b>surplus</b> &mdash; Worth bought minus dollars spent. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
+  <p class="note">Values: Draft Sharks half-PPR superflex + FantasyPros consensus (est. prices below the top 25 per position), Aug 23 2026. D/ST rows added Aug 24 in Draft Sharks rank order — the whole position is a $1&ndash;2 market, so rank matters more than price. <b>Ashton Jeanty &amp; Mike Washington Jr. repriced by hand Aug 26:</b> the Aug 23 pull caught the hours when Jeanty's practice injury looked season-ending; the follow-up news (low ankle sprain, no structural damage, hopeful for Wk 1, full strength by Wk 2&ndash;3) puts him back at a ~top-10 pick &mdash; set to $30 going / $35 worth. Mike Washington Jr. stays at $1/$1 &mdash; handcuffs clear at a buck in this room, and his upside is conditional on owning Jeanty, which is a Notes/Sleeper call, not a board price. Re-check practice reports before Friday: if Jeanty is ruled out for Wk 1, shave him a few dollars and Washington becomes a real $2&ndash;3 stretch. Live picks: Sleeper API, polled every 20 seconds. "Going For" and "Worth" are editable — type a number to override, it recomputes Deal and is saved to this browser. "Adj" is Worth repriced live for auction inflation (remaining league dollars vs remaining board value, position-weighted, calibrated to 0% before any pick): red means the market has extra money chasing this position, green means value is going cheap. Status (Target / Bid War / Watch / Sleeper / Pass) and Notes are yours to fill in; Sleeper marks $1 guys worth a $2 stretch. <b>Bid War</b> marks the guys you're willing to overpay for: a live <b>max</b> appears next to the status — Adj plus a premium (starts at +20%, grows up to +50% if you're underspending vs the room), never past your real max bid. Type your own number to override it; clear the field to go back to the computed max. The advisor uses this max as your ceiling. If winning every open Bid War at max wouldn't leave you enough to fill the roster, every max flags <b>OVER BUDGET</b> and the plan line under Inflation shows by how much. With Sort on "My rank", grab the six-dot grip to drag players into your own order — the ranking sticks across refreshes. <b>Tiers</b>: filter to a single position (Sort on "My rank") and hit "+ add tier break" to split that position into quality classes. Breaks are draggable dividers — a tier holds however many players you put between them, and each position can have its own count (up to 12 tiers). "Split" halves a tier, "merge &uarr;" removes a break, and dragging a player across a break re-tiers him without moving anyone else. Sold players stay counted in their tier, so headers show what's left live — and the advisor warns you when a player is the last of his tier. <b>Value steps</b>: inside a tier the drop in quality from one guy to the next is small by definition, so a big drop in <i>price</i> is where you get most of the player for less. A green <b>&#9660;$n</b> next to a name means he costs that much less than the man directly above him in his own tier; the tier header counts them, and the advisor calls it out when you open him. Guys under $8 are never flagged — the $1&ndash;3 range is noise, not value. Tiers ride sync and Export/Import like everything else. Use "+ mark sold" on an unsold player to log a sale by hand before Sleeper reports it; it clears itself once Sleeper confirms the pick. The magnifier next to Player searches by name — it kicks in at 2 letters and looks across sold and unsold alike, ignoring the availability and status chips. <b>Sync</b> links two browsers to one shared board (tags, notes, rank, overrides, manual sales, team budgets — last edit wins, ~3s lag): both people paste the same private sync code once, and it reconnects automatically on every load. If sync ever drops, the page just runs local-only. <b>My Plan</b> (tab above the board) is the what-if roster: 16 slots in the league's real lineup shape, three plans to compare, prices you can push around freely without touching your board values, and two one-click fills &mdash; balanced, or best-available-until-the-money-runs-out. It reconciles live: players you win lock in at what you paid, players you planned who go elsewhere drop into the Gone strip with the price they fetched. Compare plans on <b>surplus</b> &mdash; Worth bought minus dollars spent. <b>Export</b> copies your whole board as a backup code; <b>Import</b> loads one (and, if sync is on, makes it the shared board). Keep this tab open during the draft.</p>
 
 </div>
 
@@ -814,16 +824,52 @@ function tierInfoFor(i){   // {t, left, size, tiers} for an on-board player, or 
   for (var k = start; k < end; k++) if (!soldByIdx[order[k]]) left++;
   return {t:t, left:left, size:end-start, tiers:cuts.length+1};
 }
-function tierHeaderHtml(P, t, cuts, order, nT){
+/* ---------- value steps inside a tier ----------
+   A tier says these guys are CLOSE in value — they're still graded (rank order inside
+   the tier is real), but the drop from one to the next is small by construction. So a
+   big PRICE drop between adjacent players inside a tier is where price falls faster
+   than value: that player is the cheap retreat if you miss the guys above him, which
+   is the whole point of tiering. Flags the player BELOW the step.
+   Computed on the FULL tier order (sold included) so the shape holds all draft, and on
+   Adj so the dollar threshold tracks live money. The $8 floor kills the $1-3 swamp
+   (D/ST and the deep TEs) where dollar gaps are noise. */
+var VSTEP_MIN_D = 4, VSTEP_MIN_PCT = 0.25, VSTEP_FLOOR = 8;
+function valueStepsFor(P){
+  var order = posOrderOf(P);
+  var cuts = cutsOf(P, order.length);
+  var out = {};
+  if (!cuts.length) return out;          // no tiers here: nothing to compare within
+  var bounds = [0].concat(cuts, [order.length]);
+  for (var t = 0; t < bounds.length - 1; t++){
+    for (var k = bounds[t] + 1; k < bounds[t+1]; k++){
+      var up = adjVal(order[k-1]), me = adjVal(order[k]);
+      if (up < VSTEP_FLOOR) continue;
+      var d = up - me;
+      if (d >= VSTEP_MIN_D && d >= up * VSTEP_MIN_PCT) {
+        out[order[k]] = { d:d, from:DATA[order[k-1]][0], tier:t+1 };
+      }
+    }
+  }
+  return out;
+}
+function vstepBadgeHtml(v){
+  return '<span class="vstep" title="$'+v.d+' cheaper than '+escapeAttr(v.from)
+    + ' directly above him in Tier '+v.tier+' — inside a tier the value drop is small, so this is where price falls faster than value">&#9660;$'+v.d+'</span>';
+}
+function tierHeaderHtml(P, t, cuts, order, nT, steps){
   var start = t === 1 ? 0 : cuts[t-2];
   var end = t <= cuts.length ? cuts[t-1] : order.length;
-  var size = end - start, left = 0;
-  for (var k = start; k < end; k++) if (!soldByIdx[order[k]]) left++;
+  var size = end - start, left = 0, nSteps = 0;
+  for (var k = start; k < end; k++) {
+    if (!soldByIdx[order[k]]) left++;
+    if (steps && steps[order[k]]) nSteps++;
+  }
   var cntCls = left <= 2 ? "tier-count scarce" : "tier-count";
   var cnt = left + " of " + size + " left" + (left === 1 ? " &mdash; last one" : (left === 0 ? " &mdash; gone" : ""));
   var h = '<tr class="tier-row" data-tier="'+t+'"><td colspan="13">';
   if (t >= 2) h += '<span class="tier-grip" title="drag to move this tier break">&#x283F;</span>';
   h += '<span class="tier-label">Tier '+t+'</span><span class="'+cntCls+'">'+cnt+'</span>';
+  if (nSteps) h += '<span class="tier-steps" title="players inside this tier who cost meaningfully less than the man above them">&middot; '+nSteps+' value step'+(nSteps>1?'s':'')+'</span>';
   if (size >= 2 && nT < 12) h += '<button type="button" class="tier-btn tier-split" data-tier="'+t+'" title="split this tier in two">split</button>';
   if (t >= 2) h += '<button type="button" class="tier-btn tier-merge" data-tier="'+t+'" title="merge into the tier above">merge &uarr;</button>';
   h += '</td></tr>';
@@ -1176,6 +1222,7 @@ function renderBoard() {
   });
   var canDrag = (mode === "myrank");
   var html = "";
+  var vSteps = {};
   function buildRow(r, k){
     var d = r.d, s = r.s, i = r.i, o = ov(i);
     var deal = dealFor(i);
@@ -1183,10 +1230,11 @@ function renderBoard() {
     var edited = (o.worth !== undefined && o.worth !== "") || (o.going !== undefined && o.going !== "");
     var statusVal = o.status || "";
     var rankShown = canDrag ? (rp[i]+1) : (k+1);
-    return '<tr class="'+(s?"sold":"mysort")+'" data-row-idx="'+i+'">'
+    var vs = vSteps[i];
+    return '<tr class="'+(s?"sold":"mysort")+(vs?" vstep-row":"")+'" data-row-idx="'+i+'">'
       + '<td class="grip-cell"><span class="grip'+(canDrag?'':' off')+'" title="'+(canDrag?'drag to reorder':'switch Sort to &quot;My rank&quot; to reorder')+'">&#x283F;</span>'+planAddBtnHtml(i, s)+'</td>'
       + '<td class="r-rank">'+rankShown+'</td>'
-      + '<td class="r-name">'+d[0]+(edited?'<span class="edited-mark" title="edited">&#9679;</span>':'')+'</td>'
+      + '<td class="r-name">'+d[0]+(edited?'<span class="edited-mark" title="edited">&#9679;</span>':'')+(vs?vstepBadgeHtml(vs):'')+'</td>'
       + '<td><span class="pos '+d[1]+'">'+(d[1]==="DEF"?"D/ST":d[1])+'</span></td>'
       + '<td class="r-meta">'+d[2]+'</td>'
       + '<td class="r-meta">'+d[3]+'</td>'
@@ -1216,6 +1264,7 @@ function renderBoard() {
   var tCuts = tierView ? cutsOf(posFilter, tOrder.length) : [];
   if (tierView && tCuts.length) {
     var nT = tCuts.length + 1;
+    vSteps = valueStepsFor(posFilter);   // price cliffs inside each tier — badge + row accent
     var tPosPos = {};
     tOrder.forEach(function(idx,p){ tPosPos[idx] = p; });
     var buckets = [];
@@ -1227,7 +1276,7 @@ function renderBoard() {
     });
     var k2 = 0;
     for (var t3 = 1; t3 <= nT; t3++){
-      html += tierHeaderHtml(posFilter, t3, tCuts, tOrder, nT);
+      html += tierHeaderHtml(posFilter, t3, tCuts, tOrder, nT, vSteps);
       buckets[t3-1].forEach(function(r){ html += buildRow(r, k2++); });
     }
   } else {
@@ -1245,10 +1294,10 @@ function refreshTierHeaders(){
   if (!tierView || dragging) return;
   var order = posOrderOf(posFilter), cuts = cutsOf(posFilter, order.length);
   if (!cuts.length) return;
-  var nT = cuts.length + 1;
+  var nT = cuts.length + 1, steps = valueStepsFor(posFilter);
   rowsEl.querySelectorAll("tr.tier-row[data-tier]").forEach(function(tr){
     var t = Number(tr.getAttribute("data-tier"));
-    if (t >= 1 && t <= nT) tr.outerHTML = tierHeaderHtml(posFilter, t, cuts, order, nT);
+    if (t >= 1 && t <= nT) tr.outerHTML = tierHeaderHtml(posFilter, t, cuts, order, nT, steps);
   });
 }
 
@@ -1670,6 +1719,9 @@ function updateAdvisor(){
       if (ti.left <= 1) lines.push('<span class="call-walk">Last one left in '+posLbl+' Tier '+ti.t+'</span>'+(ti.t < ti.tiers ? ' &mdash; after him the position drops a tier. Expect the room to push.' : ' &mdash; and it&rsquo;s the last tier you rated.'));
       else if (ti.left === 2) lines.push('Tier '+ti.t+' '+posLbl+': only <b>2 left</b> &mdash; scarcity bidding starts here.');
       else lines.push('<span class="call-note">Tier '+ti.t+' '+posLbl+' &middot; '+ti.left+' of '+ti.size+' left.</span>');
+      // price cliff inside his own tier: small value step down, big price step down
+      var vs = valueStepsFor(P)[i];
+      if (vs) lines.push('<span class="call-push">Value step.</span> <b>$'+vs.d+'</b> cheaper than '+vs.from+' right above him in the same tier &mdash; you take a small drop in quality for a real drop in price.');
     }
     if (isWar(i) && WAR.over > 0) lines.push('<span class="call-walk">Bid War plan is $'+WAR.over+' over budget</span> &mdash; winning every open war at max doesn&rsquo;t fit. Trim a max or drop someone.');
 
